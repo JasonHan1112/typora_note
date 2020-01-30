@@ -1,0 +1,10 @@
+# Chapter 10: Interrupt Handling
+- Requesting the interrupt at device open, on the other hand, allows some sharing of resources. The correct place to call request_irq is when the device is first opened, before the hardware is instructed to generate interrupts. 
+- The place to call free_irq is the last time the device is closed, after the hardware is told not to interrupt the processor anymore. 
+- Whenever a hardware interrupt reaches the processor, an internal counter is incremented, providing a way to check whether the device is working as expected. Reported interrupts are shown in /proc/interrupts. 
+- The so-called top half is the routine that actually responds to the interrupt—the one you register with request_irq. The bottom half is a routine that is scheduled by the top half to be executed later, at a safer time. 
+- In the typical scenario, the top half saves device data to a device-specific buffer, schedules its bottom half, and exits: this operation is very fast. The bottom half then performs whatever other work is required, such as awakening processes, starting up another I/O operation, and so on. This setup permits the top half to service a new interrupt while the bottom half is still working.
+- Tasklets are often the preferred mechanism for bottom-half processing; they are very fast, but all tasklet code must be atomic. The alternative to tasklets is workqueues, which may have a higher latency but that are allowed to sleep.
+- Remember that tasklets are a special function that may be scheduled to run, in software interrupt context, at a system-determined safe time.
+- Tasklets are also guaranteed to run on the same CPU as the function that first schedules them. 
+- Since the workqueue function runs in process context, it can sleep if need be. You cannot, however, copy data into user space from a workqueue, unless you use the advanced techniques we demonstrate in Chapter 15.

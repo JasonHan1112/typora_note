@@ -1,0 +1,2 @@
+# Chapter 11: Data Types in the Kernel
+- These two macros convert a value from whatever the CPU uses to an unsigned, little-endian, 32-bit quantity and back. They work whether your CPU is big-endian or little-endian and, for that matter, whether it is a 32-bit processor or not. u32 cpu_to_le32 (u32); u32 le32_to_cpu (u32);

@@ -1,0 +1,2 @@
+# strace 学习
+It intercepts and records the system calls which are called by a process and the  signals  which  are  received by a process.  The name of each system call, its arguments and its return value are printed on standard error or to the file specified with the -o option.
