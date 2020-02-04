@@ -131,15 +131,201 @@ let z1=$x+$y;       echo $z1    # output: 8
 ((z = 3 + 5));      echo $z # output: 8
 ```
 - 2019/12/7
-  - vim 向外界复制
+  
+- vim 向外界复制
 vim --version | grep clipboard
 看是否有+clipboard，如果有那么说明可以向剪切板复制
 （1）选中文字
 （2）"+y进行复制
-（3）"+p进行粘贴
+  （3）"+p进行粘贴
+  
 - 2019/12/11
-通过ip addr add xxx.xxx.xxx.xxx/24 dev enos1
-设置ip后需要ip link set enos1 up来启动网卡 否则设置不成功。
+  通过ip addr add xxx.xxx.xxx.xxx/24 dev enos1
+  设置ip后需要ip link set enos1 up来启动网卡 否则设置不成功。
+
 - 2019/12/30
-TLB可以理解为页表cache。快表，直译为旁路快表缓冲，也可以理解为页表缓冲，地址变换高速缓存。TLB是一种高速缓存，内存管理硬件使用它来改善虚拟地址到物理地址的转换速度。当前所有的个人桌面，笔记本和服务器处理器都使用TLB来进行虚拟地址到物理地址的映射。使用TLB内核可以快速的找到虚拟地址指向物理地址，而不需要请求RAM内存获取虚拟地址到物理地址的映射关系。这与data cache和instruction caches有很大的相似之处。
-想像一下x86_32架构下没有TLB的存在时的情况，对线性地址的访问，首先从PGD中获取PTE（第一次内存访问），在PTE中获取页框地址（第二次内存访问），最后访问物理地址，总共需要3次RAM的访问。如果有TLB存在，并且TLB hit，那么只需要一次RAM访问即可。
+  TLB可以理解为页表cache。快表，直译为旁路快表缓冲，也可以理解为页表缓冲，地址变换高速缓存。TLB是一种高速缓存，内存管理硬件使用它来改善虚拟地址到物理地址的转换速度。当前所有的个人桌面，笔记本和服务器处理器都使用TLB来进行虚拟地址到物理地址的映射。使用TLB内核可以快速的找到虚拟地址指向物理地址，而不需要请求RAM内存获取虚拟地址到物理地址的映射关系。这与data cache和instruction caches有很大的相似之处。
+  想像一下x86_32架构下没有TLB的存在时的情况，对线性地址的访问，首先从PGD中获取PTE（第一次内存访问），在PTE中获取页框地址（第二次内存访问），最后访问物理地址，总共需要3次RAM的访问。如果有TLB存在，并且TLB hit，那么只需要一次RAM访问即可。
+
+- https://hygon.webex.com/hygon/j.php?MTID=m07b1bafdfc0a0fd4a5bf3dfefabc5605
+
+- 2020/2/4
+
+  1. grep -v "xxx": 对选择的内容取反查找
+
+  2. 将多行替换成一行
+
+     - 实现方法
+
+       將文件內連續的空白行 , 刪除它們成為一行
+
+       sed -e '/^$/{N;/\n$/D};'
+
+       參照[section4.16])表示 , 將空白行的下一行資料添加至 pattern space 內。函數參數 /^$/D  表示 , 當添加的是空白行時 , 刪除第一行空白行 , 而且剩下的空白行則再重新執行指令一次。指令重新執行一次 , 刪除一行空白行 ,  如此反覆直至空白行後添加的為非空白行為止 , 故連續的空白行最後只剩一空白行被輸出。 
+
+     - 详细分析
+
+        函数参数 D 表示删除 pattern space 内的第一行资料。其指令格式如下: 
+
+       [address1,address2]D 
+       
+       对上述格式有下面几点说明 : 
+
+       函数参数 D 最多配合两个地址参数。 
+       函数参数 D 与 d 的比较如下 : 
+       当 pattern space 内只有一数据行时 , D 与 d 作用相同。 
+       当 pattern space 内有多行资料行时 
+       D 表示只删除 pattern space 内第一行资料 ; d 则全删除。 
+       D 表示执行删除后 , pattern space 内不添加下一笔数据 , 而将剩下的数据重新执行 sed script ; d 则读入下一行后执行 sed script。
+
+       例如：
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4.  
+       5.  
+       6. This line is followed by 3 blank lines. 
+       7.  
+       8.  
+       9.  
+       10. This line is followed by 4 blank lines. 
+       11.  
+       12.  
+       13.  
+       14.  
+       15. This is the end. 
+       
+        我想得到的效果是
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4.  
+       5. This line is followed by 3 blank lines. 
+       6.  
+       7. This line is followed by 4 blank lines. 
+       8.  
+       9. This is the end. 
+
+       
+        代码如下
+
+       1. /^$/{ 
+       2. N 
+       3. /^\n$/d 
+       4. } 
+
+       执行后效果如下
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4. This line is followed by 3 blank lines. 
+       5.  
+       6. This line is followed by 4 blank lines. 
+       7. This is the end. 
+
+       这个过程是这样的  sed是一行一行读入数据的，
+
+       首先读入第一行，因为并不匹配，所以直接打印出来，如下：
+
+       1. This line is followed by 1 blank line. 
+
+       然后读入第二行，匹配，所以N继续读入第三行，然后再与/^\n$/进行匹配，很明显不匹配，所以内容也直接打印出来，如下：
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+
+       接着读入第四行，匹配，所以N继续读入第5行，然后与/^\n$/进行匹配，因为此时读入的为2个空行，显然是匹配的这时候此2行被删除，所以此时打印的结果依旧如上。
+
+       接着再读入第5行，不匹配，直接打印出来，如下：
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4. This line is followed by 3 blank lines. 
+
+       接着读入第6行，匹配，N继续读入第7行，显然继续匹配，所以次2行被删除
+
+       接着读入8行，匹配，N继续读入第9行，不匹配，所以把第8 9行打印出来，如下
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4. This line is followed by 3 blank lines. 
+       5.  
+       6. This line is followed by 4 blank lines. 
+
+       接着读入第10行，匹配，N继续读入第11行，显然继续匹配，所以次2行被删除
+
+       接着读入第12行，匹配，N继续读入第13行，显然继续匹配，所以次2行被删除
+
+       最后读入最后14行，不匹配，直接打印，如下：
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4. This line is followed by 3 blank lines. 
+       5.  
+       6. This line is followed by 4 blank lines. 
+       7. This is the end. 
+
+       而代码使用D
+
+       1. /^$/{ 
+       2. N 
+       3. /^\n$/D 
+       4. } 
+
+       他的流程就不同了
+
+
+       首先读入第一行，因为并不匹配，所以直接打印出来，如下：
+
+       1. This line is followed by 1 blank line. 
+
+       
+        然后读入第二行，匹配，所以N继续读入第三行，然后再与/^\n$/进行匹配，很明显不匹配，所以内容也直接打印出来，如下：
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+
+       
+        接着读入第四行，匹配，所以N继续读入第5行，然后与/^\n$/进行匹配，因为此时读入的为2个空行，显然是匹配的，所以D把第4行删除，剩下第5行，但是此时第5行并不会打印出来，而是作为读入，继续运行这个脚本，也就是说第5行又先匹配/^$/,然后执行N，读入第6行，而此时内容已经不匹配/^\n$/，这样第5行和第6行就直接打印出来了，如下：
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4.  
+       5. This line is followed by 3 blank lines. 
+
+       接着读入第7行，此时匹配，然后N继续读入第8行，依旧匹配，所以执行D，删除第7行，而第8行继续匹配，重新执行脚本，N继续读入第9行，此时依旧匹配，所以删除第8行，第9行继续匹配，N读入第10行，而此时不再匹配，所以打印出第9和10行，如下：
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4.  
+       5. This line is followed by 3 blank lines. 
+       6.  
+       7. This line is followed by 4 blank line. 
+
+       然后读入11直到最后一行，最后得到所需要的结果
+
+
+       1. This line is followed by 1 blank line. 
+       2.  
+       3. This line is followed by 2 blank lines. 
+       4.  
+       5. This line is followed by 3 blank lines. 
+       6.  
+       7. This line is followed by 4 blank line. 
+       8.  
+       9. This is the end. 
