@@ -102,3 +102,48 @@ int mod_timer(struct timer_list *timer, unsigned long expires);
 >>（4）在定时器到期时，function被执行；
 
 >>（5）在程序中涉及timer控制的地方适当地调用del_timer、mod_timer删除timer或修改timer的expires。
+
+
+## xxx_initcall调用先后顺序
+- linux的做法是：
+底层实现上，在内核镜像文件中，自定义一个段，这个段里面专门用来存放这些初始化函数的地址，内核启动时，只需要在这个段地址处取出函数指针，一个个执行即可。对上层而言，linux内核提供xxx_init(init_func)宏定义接口,驱动开发者只需要将驱动程序的init_func使用xxx_init()来修饰，这个函数就被自动添加到了上述的段中，开发者完全不需要关心实现细节。对于各种各样的驱动而言，可能存在一定的依赖关系，需要遵循先后顺序来进行初始化，考虑到这个，linux也对这一部分做了分级处理。
+
+- 这个数字代表这个fn执行的优先级，数字越小，优先级越高，带s的fn优先级低于不带s的fn优先级。
+
+```c
+/*
+ * Early initcalls run before initializing SMP.
+ *
+ * Only for built-in code, not modules.
+ */
+#define early_initcall(fn)		__define_initcall(fn, early)
+
+/*
+ * A "pure" initcall has no dependencies on anything else, and purely
+ * initializes variables that couldn't be statically initialized.
+ *
+ * This only exists for built-in code, not for modules.
+ * Keep main.c:initcall_level_names[] in sync.
+ */
+#define pure_initcall(fn)		__define_initcall(fn, 0)
+
+#define core_initcall(fn)		__define_initcall(fn, 1)
+#define core_initcall_sync(fn)		__define_initcall(fn, 1s)
+#define postcore_initcall(fn)		__define_initcall(fn, 2)
+#define postcore_initcall_sync(fn)	__define_initcall(fn, 2s)
+#define arch_initcall(fn)		__define_initcall(fn, 3)
+#define arch_initcall_sync(fn)		__define_initcall(fn, 3s)
+#define subsys_initcall(fn)		__define_initcall(fn, 4)
+#define subsys_initcall_sync(fn)	__define_initcall(fn, 4s)
+#define fs_initcall(fn)			__define_initcall(fn, 5)
+#define fs_initcall_sync(fn)		__define_initcall(fn, 5s)
+#define rootfs_initcall(fn)		__define_initcall(fn, rootfs)
+#define device_initcall(fn)		__define_initcall(fn, 6)
+#define device_initcall_sync(fn)	__define_initcall(fn, 6s)
+#define late_initcall(fn)		__define_initcall(fn, 7)
+#define late_initcall_sync(fn)		__define_initcall(fn, 7s)
+#define __initcall(fn) device_initcall(fn)
+```
+- __initcal在kenerl中的调用关系
+start_kernel------>arch_call_rest_init------>rest_init------>kernel_init------>kernel_init_freeable------>do_basic_setup------>do_initcalls------>do_initcall_level
+
