@@ -3,3 +3,4 @@
 - asynchronous I/O
 - kernel timer
 - autoconf
+- devm_xxxx
