@@ -247,22 +247,22 @@ vim --version | grep clipboard
        2.  
        3. This line is followed by 2 blank lines. 
        4. This line is followed by 3 blank lines. 
-
+    
        接着读入第6行，匹配，N继续读入第7行，显然继续匹配，所以次2行被删除
-
+    
        接着读入8行，匹配，N继续读入第9行，不匹配，所以把第8 9行打印出来，如下
-
+    
        1. This line is followed by 1 blank line. 
        2.  
        3. This line is followed by 2 blank lines. 
        4. This line is followed by 3 blank lines. 
        5.  
        6. This line is followed by 4 blank lines. 
-
+    
        接着读入第10行，匹配，N继续读入第11行，显然继续匹配，所以次2行被删除
-
+    
        接着读入第12行，匹配，N继续读入第13行，显然继续匹配，所以次2行被删除
-
+    
        最后读入最后14行，不匹配，直接打印，如下：
 
 
@@ -273,22 +273,23 @@ vim --version | grep clipboard
        5.  
        6. This line is followed by 4 blank lines. 
        7. This is the end. 
-
+    
        而代码使用D
-
+    
        1. /^$/{ 
        2. N 
        3. /^\n$/D 
        4. } 
-
+    
        他的流程就不同了
 
 
        首先读入第一行，因为并不匹配，所以直接打印出来，如下：
-
+    
        1. This line is followed by 1 blank line. 
 
-       
+
+​       
         然后读入第二行，匹配，所以N继续读入第三行，然后再与/^\n$/进行匹配，很明显不匹配，所以内容也直接打印出来，如下：
 
 
@@ -296,7 +297,8 @@ vim --version | grep clipboard
        2.  
        3. This line is followed by 2 blank lines. 
 
-       
+
+​       
         接着读入第四行，匹配，所以N继续读入第5行，然后与/^\n$/进行匹配，因为此时读入的为2个空行，显然是匹配的，所以D把第4行删除，剩下第5行，但是此时第5行并不会打印出来，而是作为读入，继续运行这个脚本，也就是说第5行又先匹配/^$/,然后执行N，读入第6行，而此时内容已经不匹配/^\n$/，这样第5行和第6行就直接打印出来了，如下：
 
 
@@ -305,7 +307,7 @@ vim --version | grep clipboard
        3. This line is followed by 2 blank lines. 
        4.  
        5. This line is followed by 3 blank lines. 
-
+    
        接着读入第7行，此时匹配，然后N继续读入第8行，依旧匹配，所以执行D，删除第7行，而第8行继续匹配，重新执行脚本，N继续读入第9行，此时依旧匹配，所以删除第8行，第9行继续匹配，N读入第10行，而此时不再匹配，所以打印出第9和10行，如下：
 
 
@@ -316,7 +318,7 @@ vim --version | grep clipboard
        5. This line is followed by 3 blank lines. 
        6.  
        7. This line is followed by 4 blank line. 
-
+    
        然后读入11直到最后一行，最后得到所需要的结果
 
 
@@ -329,3 +331,7 @@ vim --version | grep clipboard
        7. This line is followed by 4 blank line. 
        8.  
        9. This is the end. 
+- 2020/2/4
+
+1. du查看文件夹使用情况
+2. debian在改变字体时，需要修改/etc/locale.gen，并且需要执行locale-gen命令
