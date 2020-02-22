@@ -19,4 +19,14 @@
 - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 - sudo apt-get update
 - sudo apt-get install xxxxxxxxxxx
+# 开机启动
+- 在/etc/init.d/中添加执行脚本
+- 在/etc/rcx.d/中添加软链接
+0：关机
+1：单用户模式
+2：无网络支持的多用户模式
+3：有网络支持的多用户模式
+4：保留，未使用
+5：有网络支持有X-Window支持的多用户模式
+6：重新引导系统，即重启
 
