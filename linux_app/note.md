@@ -21,12 +21,27 @@
 - sudo apt-get install xxxxxxxxxxx
 # 开机启动
 - 在/etc/init.d/中添加执行脚本
+
 - 在/etc/rcx.d/中添加软链接
-0：关机
-1：单用户模式
-2：无网络支持的多用户模式
-3：有网络支持的多用户模式
-4：保留，未使用
-5：有网络支持有X-Window支持的多用户模式
-6：重新引导系统，即重启
+
+  0：关机
+  1：单用户模式
+  2：无网络支持的多用户模式
+  3：有网络支持的多用户模式
+  4：保留，未使用
+  5：有网络支持有X-Window支持的多用户模式
+  6：重新引导系统，即重启
+
+# 开机mount
+
+- 查看uuid: 
+root# blkid
+- 修改权限
+root # chmod 777 /etc/fstab
+- 添加
+root# echo "UUID=e943fbb7-020a-4c64-a48a-2597eb2496df /vdb1 ext4 defaults 0 0" >> /etc/fstab
+- 恢复权限
+root# chmod 644 /etc/fstab
+
+
 
