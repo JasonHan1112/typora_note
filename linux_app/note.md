@@ -43,5 +43,44 @@ root# echo "UUID=e943fbb7-020a-4c64-a48a-2597eb2496df /vdb1 ext4 defaults 0 0" >
 - 恢复权限
 root# chmod 644 /etc/fstab
 
+# cflow的使用
+
+## 安装
+
+apt-get install cflow
+
+## 使用
+
+cflow --help
+重点关注以下选项
+```
+Usage: cflow [OPTION...] [FILE]...
+generate a program flowgraph
+
+ General options:
+  -d, --depth=NUMBER         Set the depth at which the flowgraph is cut off
+  -o, --output=FILE          Set output file name (default -, meaning stdout)
+  -r, --reverse              * Print reverse call tree
+  -m, --main=NAME            Assume main function to be called NAME
+  -n, --number               * Print line numbers                       
+  -T, --tree                 * Draw ASCII art tree
+  -V, --version              print program version
+  --cpp[=command]            * Run the specified preprocessor command.
+
+```
+## example
+cflow -T -m main -n timer.c
+
+## tree2dotx转换成dot文件
+cflow -T -m main -n timer.c > main.txt
+cat main.txt | tree2dotx > main.dot
+## 通过graphviz将dot文件生成图片
+dot -Tgif main.dot -o main.gif
+
+
+
+
+
+
 
 
