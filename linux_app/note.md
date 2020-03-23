@@ -42,7 +42,12 @@ root # chmod 777 /etc/fstab
 root# echo "UUID=e943fbb7-020a-4c64-a48a-2597eb2496df /vdb1 ext4 defaults 0 0" >> /etc/fstab
 - 恢复权限
 root# chmod 644 /etc/fstab
-
+# systemctl 开机启动
+1. 在/etc/systemd/system/中创建xxxx.service。
+2. 参考sshd.service中的内容，编写xxxx.service。
+3. systemctl enable xxxx.services。
+4. systemctl start xxxx.service
+5. systemctl status xxxx.service.
 # cflow的使用
 
 ## 安装
@@ -119,6 +124,7 @@ sudo apt-get install tmux
 - ctrl-b '　　切换至指定编号（可大于9）的window
 - ctrl-b f　　根据显示的内容搜索pane
 - ctrl-b &　　关闭当前window
+- ctrl-b [   进入翻屏模式，q退出
 
 
 
