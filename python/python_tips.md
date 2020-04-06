@@ -3,6 +3,7 @@
 平时使用和看文档时的总结
 
 ## 相对导入
+Since the name of the main module is always "\_\_main\_\_", modules intended for use as the main module of a Python application must always use absolute imports.
 
 ```
 from . import xxx # 当前路径导入
@@ -101,8 +102,232 @@ del val
 执行后val再不能当做变量引用
 
 ## 不可变变量和可变变量
-不可变变量：数字、字符串、元组
+不可变变量：数字、字符串、元组（在其中的可变变量可以修改）
 可变变量：列表、字典
 
 ## 字符串”符号和‘符号
 在“12345”字符串中加入’不需要转义，同理在‘12345’中加入“不需要转义
+
+## python中没有switch，利用if...elif...elif...else
+
+```
+if x==1:
+    print("xxx")
+elif x==2:
+    print("xx")
+elif x==3:
+    print("x")
+else:
+    print("")
+```
+## dict.items()返回key和value
+```
+dict = {"1": a, "2": b}
+for i, d in dict.iterms():
+    print(i, d)
+```
+## for循环通过enumerate来处理索引，一般list或者tuple通过其来生成索引，enumerate(dict)
+```
+list = [1, 2, 3, 4]
+for index, data in enumerate(list):
+    print(index, data)
+
+0 1
+1 2
+2 3
+3 4
+----------------------------------------------
+dict = {"fst": 1, "sec": 2}
+for i, val in enumerate(a):
+    print("%d: %s" %(i, val))
+
+0: fst
+1: sec
+```
+## for循环的else
+如果在循环中没有经过break那么就会执行else的语句，如果经过了break 那么就不会执行else的语句
+```
+for x in range(10):
+    if x % 2 == 0:
+        print("it can be divided by 2")
+        break
+else:
+    print("no one can be divided by 2")
+```
+## pass的使用
+pass多用来做占位，如：
+```
+class a():
+    pass
+def b():
+    pass
+```
+## 函数注释的添加docstring，要养成该习惯
+```
+def test_docstring():
+    """
+    this is a test docstring
+    """
+    print("this is a test docstring")
+
+help (test_docstring)
+会打印注释
+```
+## 全局变量，非局部变量
+- 通过global声明全局变量：
+  1. 如果在函数中有同样名称的局部变量（没有用global声明）则在函数内部使用的是局部变量。
+  2. 如果在函数中没有与全局变量同名的局部变量（没有global声明）的话，如果只读那么读到的是全局变量，直接写的话会报错（g += 1）
+- nolocal来声明外围变量（非全局变量）
+只在闭包里面生效，作用域就是闭包里面的，外函数和内函数都影响，但是闭包外面不影响。
+```
+b = 0
+def test_global():
+    global b; #在局部使用全局变量时需要在局部声明该变量
+    print("local print b = %d" % b)
+print("global print b = %d" % b)
+
+def test_global():
+    a = 10
+    def test_nonlocal():
+        nonlocal a
+        a += 10
+        print("local print nonlocal a = %d" % a)
+    print("print local a = %d", %a)
+
+```
+## in的使用
+可以通过**in**关键词来测试是否包含一个特定的值。
+```
+# test = ("a", "b", "c"); it's ok
+test = ["a", "b", "c"]
+if a in test:
+    print("a in test")
+
+```
+## is的使用
+在**if**语句中可以通过**is**命令来判断，注意**is**和**==**有区别
+```
+a=1
+if a is 1:
+    print("a is 1")
+```
+## 函数参数*arguments(positional arguments) **keyarguments(keyword arguments)
+- \*arguments作为参数时会将参数表示成tuple，\*\*keyartuments会将参数表示成dictionary。\*arguments必须在 \*\*keyarguments之前
+
+```
+def cheeseshop(kind, *arguments, **keywords):
+    print("-- Do you have any", kind, "?")
+    print("-- I'm sorry, we're all out of", kind)
+    for arg in arguments:
+        print(arg)
+    print("-" * 40)
+    for kw in keywords:
+        print(kw, ":", keywords[kw])
+
+
+-- Do you have any Limburger ?
+-- I'm sorry, we're all out of Limburger
+It's very runny, sir.
+It's really very, VERY runny, sir.
+----------------------------------------
+shopkeeper : Michael Palin
+client : John Cleese
+sketch : Cheese Shop Sketch
+```
+- 函数调用时做实参传入
+```
+def test_args(first, second, third, fourth, fifth):
+    print 'First argument: ', first
+    print 'Second argument: ', second
+    print 'Third argument: ', third
+    print 'Fourth argument: ', fourth
+    print 'Fifth argument: ', fifth
+
+# Use *args
+args = [1, 2, 3, 4, 5]
+test_args(*args)
+# results:
+# First argument:  1
+# Second argument:  2
+# Third argument:  3
+# Fourth argument:  4
+# Fifth argument:  5
+
+# Use **kwargs
+kwargs = {
+    'first': 1,
+    'second': 2,
+    'third': 3,
+    'fourth': 4,
+    'fifth': 5
+}
+
+test_args(**kwargs)
+# results:
+# First argument:  1
+# Second argument:  2
+# Third argument:  3
+# Fourth argument:  4
+# Fifth argument:  5
+```
+## 字典数据结构（dictionary）
+- dict = {key: value} #key可以是string也可以是数字，value也是
+- 通过del可以删除dict 某一项
+del dict[key]
+- list(dict)列出所有的key
+- sorted(dict)，按照key来排序
+- in dict，来判断是否是字典的key
+## set数据结构
+- 没有顺序
+- set()函数来创建
+- 两个set可以进行and or not等来运算
+## 判断是否是通过直接执行方式运行脚本
+通过python3 test.py来执行时 \_\_name\_\_ == "__main__"
+```
+...
+if __name__ == "__main__":
+    ...
+```
+
+## dir()函数
+该函数可以查看模块中的名称（定义的函数等等），但是不会列出built in的名称，可以通过dir(builtins)来查看built in的名称
+
+## 一个.py文件是一个module，多个.py文件组成package（该文件夹需要有__init__.py）
+- 在package里边的\_\_init\_\_.py中有\_\_all\_\_，通过from xxx import \*会将\_\_all\_\_中的module导入.
+- Since the name of the main module is always "\_\_main\_\_", modules intended for use as the main module of a Python application must always use absolute imports.
+```
+__all__ = ["echo", "surround", "reverse"]
+
+
+from xxx import xxx #会导入echo.py surround.py reverse.py
+```
+## with的方式打开文件，系统会自动关闭
+```
+with open("myfile.txt") as f:
+    for line in f:
+        print(line, end="")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
