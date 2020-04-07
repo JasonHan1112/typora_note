@@ -195,6 +195,33 @@ def test_global():
     print("print local a = %d", %a)
 
 ```
+下边例子说明了global 和nonlocal和local的区别
+```
+def scope_test():
+    def do_local():
+        spam = "local spam" #新建了一个local变量和字符串绑定
+    def do_nonlocal():
+        nonlocal spam #将上一层spam变量和一个字符串绑定
+        spam = "nonlocal spam"
+    def do_global():
+        global spam #声明一个全局变量
+        spam = "global spam" #将这个全局变量和字符串绑定
+    spam = "test spam"
+    do_local() #给函数内local字符串赋值
+    print("After local assignment:", spam) #打印当前local字符串
+    do_nonlocal() #给函数外nonlocal变量赋值（当前的local字符串赋值）
+    print("After nonlocal assignment:", spam) #打印当前local字符串
+    do_global() #给global变量赋值
+    print("After global assignment:", spam) #打印当前local字符串
+
+scope_test()
+print("In global scope:", spam) #打印global字符串
+-----------------------------------------------------------------------
+After local assignment: test spam
+After nonlocal assignment: nonlocal spam
+After global assignment: nonlocal spam
+In global scope: global spam
+```
 ## in的使用
 可以通过**in**关键词来测试是否包含一个特定的值。
 ```
@@ -307,10 +334,44 @@ with open("myfile.txt") as f:
     for line in f:
         print(line, end="")
 ```
+## 简单类的定义
+```
+class Complex:
+    def __init__(self, realpart, imagpart):
+        self.r = realpart
+        self.i = imagpart
+    def f(self):
+        return "hello world"
+```
 
+## 类成员变量可以在使用时定义
+```
+class Complex:
+    def __init__(self, realpart, imagpart):
+        self.r = realpart
+        self.i = imagpart
+    def f(self):
+        return "hello world"
+        
+x = Complex()
+x.a = 10 #定义了一个Complex的成员变量a
+```
+## 类方法和对象方法，类变量和对象变量
+```
+class Complex:
+    class_v = "all the same in class"
+    def __init__(self, realpart, imagpart):
+        self.r = realpart
+        self.i = imagpart
+    def f(self):
+        return "hello world"
+        
+x = Complex()
+x.f() #等价于Complex.f(x)
+```
 
-
-
+- 类变量不用self来修饰如，class_v，类变量被所有对象共有，**当该变量是可变变量时，使用时要注意。修改任意一个对象的类变量也会修改其他的，当变量是不可变变量时，不会有影响（可能是因为当是可变变量时，所有对象的类变量都指向同一个区域，改变时所有对象都会跟着变，当是不可变变量修改时，不能在变量原地修改，那个类变量会指向不同区域，因此不会有影响）**
+- 对象变量用self来修饰如，self.r，每个对象有自己的变量，不共享。
 
 
 
