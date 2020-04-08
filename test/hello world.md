@@ -98,14 +98,84 @@ cond(yes)->io->e
 cond(no)->sub1(right)->op1
 ```
 
+## mermaid画图
+- 图方向
+    TB，从上到下
+    TD，从上到下
+    BT，从下到上
+    RL，从右到左
+    LR，从左到右
+    T = TOP，B = BOTTOM，L = LEFT，R = RIGHT，D = DOWN
+    
+- 节点图形
 
+    ```mermaid
+    graph TB
+      A
+      B[bname]
+      C(cname)
+      D((dname))
+      E>ename]
+      F{fname}
+    ```
+    
+- 箭头
+```mermaid
+graph TB
+      A1-->B1
+      A2---B2
+      A3--text---B3
+      A4--text-->B4
+      A5-.-B5
+      A6-.->B6
+      A7-.text.-B7
+      A8-.text.->B8
+      A9===B9
+      A10==>B10
+      A11==text===B11
+```
+- 流程
+```mermaid
+graph LR
+  start("input x") --> handler("x > 0?")
+  handler --yes--> yes("output x")
+  handler --no--> start
+  yes --> exit("exit")
+```
+
+- 子图，其中的变量是全局的
+格式：
+```
+graph LR
+  subgraph title1
+    graph definition 
+  end
+  subgraph title2
+    graph definition 
+  end
+  ...
+```
 
 ```mermaid
-graph LR;
-    A[你好] --> B[你好吗];
+graph TB
+  subgraph g3
+    a1-->b1
+  end
+  subgraph g2
+    a2-->b2
+  end
+  subgraph g1
+    a3-->b3
+  end
+  subgraph g4
+    a4-->a1
+    a4-->a2
+    a4-->a3
+  end
 ```
 
 
+## 流程图
 ```flowchart
 st=>start: 开始
 op=>operation: Your Operation
