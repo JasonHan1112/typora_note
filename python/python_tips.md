@@ -297,6 +297,18 @@ test_args(**kwargs)
 # Fourth argument:  4
 # Fifth argument:  5
 ```
+- 函数参数的特殊字符
+```
+def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+      -----------    ----------     ----------
+           |              |              |
+           |              |              |
+           |              |              |
+           |              |         Keyword only
+      Positional only     |
+                          |
+               Positional or keyword
+```
 ## 字典数据结构（dictionary）
 - dict = {key: value} #key可以是string也可以是数字，value也是
 - 通过del可以删除dict 某一项
@@ -372,7 +384,36 @@ x.f() #等价于Complex.f(x)
 
 - 类变量不用self来修饰如，class_v，类变量被所有对象共有，**当该变量是可变变量时，使用时要注意。修改任意一个对象的类变量也会修改其他的，当变量是不可变变量时，不会有影响（可能是因为当是可变变量时，所有对象的类变量都指向同一个区域，改变时所有对象都会跟着变，当是不可变变量修改时，不能在变量原地修改，那个类变量会指向不同区域，因此不会有影响）**
 - 对象变量用self来修饰如，self.r，每个对象有自己的变量，不共享。
+## 类的继承
+```
+class subclass(baseclass):
+    ...
+```
+如果父类在其他module中可以通过以下方式继承
+```
+class subclass(module.baseclass):
+    ...
+```
 
+- 继承后可以在子类的\_\_init\_\_()函数中执行super().\_\_init\_\_(...)，但不是必须
+- 在子类中调用父类的方法
+父类的名字.method就可以（module.baseclass.method()），或者用super().method()
+- isinstance()可以检查实例的类型
+- issubclass()检查继承
+- 私有变量和方法
+1. 通过用"\_\_"来修饰变量和方法为私有变量和方法，也可以强制调用（不建议）
+2. 私有属性或者方法不能在类外或者继承的对象中使用，只允许在本类中使用。调用时需要注意添加self.\_\_xxxx
+
+## 注意常用的库
+import os
+import sys
+import re
+import glob
+import argparse
+import logging
+import threading
+
+import xxx后，可以通过dir(xxx)查看库中的字段，然后通过help(xxx_xxx)查看帮助
 
 
 
