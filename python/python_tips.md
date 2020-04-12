@@ -413,13 +413,44 @@ import argparse
 import logging
 import threading
 
-import xxx后，可以通过dir(xxx)查看库中的字段，然后通过help(xxx_xxx)查看帮助
+import xxx后，可以通过dir(xxx)查看库中的字段，然后通过help(xxx_xxx)查看帮助，xxx_xxx可以是具体的对象的方法例如：
+```
+file_test = open("test", "r+")
+help(file_test.readline)
+```
+
+## python的执行流程
+.py被翻译成字节码生成.pyc，然后将其加载到python虚拟机（PVM）中执行。
+以上的过程都是在执行中执行。
+
+## try ... except ... finally ...
+try语句中有异常发生那么会执行except中的语句，finally中的语句无论一场是否发生，都会执行。
+```
+a = 0
+b = 1
+try:
+    c = b/a
+except Exception as e:
+    print("出现异常--->" + str(e))
+finally:
+    print("always exe")
+```
 
 
 
+## python重新加载module
+通过import xxxx，只能加载一次模块，下次再执行import的时候不会再重新加载，通过以下方式可以再次加载module
+```
+import importlib
+importlib.reload(xxx)
 
-
-
+```
+## 通过import xxx as A，简写
+例如：
+```
+import os as O
+O.chdir("xxx")
+```
 
 
 
