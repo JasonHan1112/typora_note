@@ -147,3 +147,5 @@ int mod_timer(struct timer_list *timer, unsigned long expires);
 - __initcal在kenerl中的调用关系
 start_kernel------>arch_call_rest_init------>rest_init------>kernel_init------>kernel_init_freeable------>do_basic_setup------>do_initcalls------>do_initcall_level
 
+## only build one module
+make -C <source_path> M=<module_path> 
