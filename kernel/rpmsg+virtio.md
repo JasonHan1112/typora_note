@@ -54,7 +54,7 @@ notify（让对端产生一个信号，出发本地中断）
 
 ## virtio_rpmsg_bus的kernel 实现
 
-主要数据结构
+- 主要数据结构
 
 ```c
 /**               
@@ -159,7 +159,7 @@ struct rpmsg_device {
 
 ```
 
-驱动的匹配和注册
+- 驱动的匹配和注册
 
 ```c
 register_virtio_driver(&virtio_ipc_driver);//向virtrio bus中注册virtio_rpmsg_bus的driver;
@@ -168,12 +168,12 @@ virtio_dev_probe();//virtio_device匹配后调用，其中会用device中注册�
 rpmsg_probe();//创建virtqueue_info vrp，分配空间;初始化vrp的local endpoints的idr，用于快速取回;初始化互斥锁和等待队列;调用virtio_device中注册的find_vqs,virtio_find_vqs为每个remote报上来的中断添加一个处理的virtqueue，request_irq;为rx，tx开辟dma地址空间，如果virtio_device支持VIRTIO_RPMSG_F_NS feature，会创建一个ns_ept(其回调中可以创建channel);通过配置remote device的寄存器使其产生中断（notify），virtio_device我们（host）已经准备好
 virtio_find_vqs();//创建底层的vring_virtqueue以及其中的vring,并注册终端和回调
 ```
-系统架构
-![5](/home/sensetime/Documents/note/typora_note/kernel/attachments/sys_frame.png)
+- 系统架构
+  ![5](./attachments/sys_frame.png)
 
 
 
-用户空间的使用
+- 用户空间的使用
 
 ```
 /** user-space application source code
@@ -203,21 +203,33 @@ ioctl(fd_ept, RPMSG_DESTROY_EPT_IOCTL);
 close(fd_ept);
 close(fd);
 ```
+- rpmsg_channel的创建
+  - rpmsg_chrdev(其中的接口注册为virtio_rpmsg的)注册到rpmsg_bus上后会注册一个char dev rpmsg_ctrldev(rpmsg_ctrl)
+  - 用户空间通过下边代码将创建一个指定名字和地址(channel info)的char dev rpmsg_eptdev(rpmsg0)，其中rpmsg_chrdev中的rpmsg_eptdev中的rpmsg_device都是注册在rpmsg bus上的同一个rpmsg_device。
+  ```c
+struct rpmsg_endpoint_info ept_info = {"rpmsg-openamp-demo-channel", 0x2, 0x1};
+int fd = open("/dev/rpmsg_ctrl0", O_RDWR);
+/* create endpoint interface */
+ioctl(fd, RPMSG_CREATE_EPT_IOCTL, &ept_info);  // /dev/rpmsg0 is created 
+  ```
+  - 用户空间通过下边代码将创建一个rpmsg_endpoint（其中的channel_info的信息来自之前ioctl的ept_info）,由于之前是注册的virtio_rpmsg的ops，因此这是创造的ept中的eptops都是virtio_rpmsg中的函数(send,sendto...)
+  ```c
+/* create endpoint */
+int fd_ept = open("/dev/rpmsg0", O_RDWR); // backend creates endpoint
+  ```
+  - rpmsg的发送
 
-rpmsg的发送
+  用户调用write------>rpmsg_eptdev_write_iter------>rpmsg_sendto(dst用endpoint的)或者rpmsg_send（dst用rpmsg_dev的）------>virtio_rpmsg_send或者virtio_rpmsg_sendto------>rpmsg_send_offchannel_raw（rpmsg_hdr msg; 拷贝data; ）------>virtqueue_add(判断是否是packed; 将该数据添加到available vring，让对端知道)------>virtqueue_kick(通知对端，触发对端中断)
 
-用户调用write------>rpmsg_eptdev_write_iter------>rpmsg_send或者rpmsg_trysend------>virtio_rpmsg_send------>rpmsg_send_offchannel_raw（rpmsg_hdr msg; 拷贝data; ）------>virtqueue_add(判断是否是packed; 将该数据添加到available vring，让对端知道)------>virtqueue_kick(通知对端，触发对端中断)
+  - rpmsg的接收
 
-rpmsg的接收
+  中断触发后，之前注册（find_vqs）在virtio层的中断函数（vring_interrupt）开始执行，调用virtqueue回调(find_vqs)中注册回调（virtqueue也是在(find_vqs)中注册的）rpmsg_recv_done------>virtqueue_get_buf(从virtqueue中的数据(virtqueue_add的)取出来)------>rpmsg_recv_single调用rpmsg中的ept->cb（rpmsg_ept_cb, 将数据存入队列skb_queue_tail）------>唤醒等待数据锁(eptdev->readq)等待队列------>继续执行rpmsg_eptdev_read_iter拷贝数据到用户空间------>返回用户空间
 
-中断触发后，之前注册（find_vqs）在virtio层的中断函数（vring_interrupt）开始执行，调用virtqueue回调(find_vqs)中注册回调（virtqueue也是在(find_vqs)中注册的）rpmsg_recv_done------>virtqueue_get_buf(从virtqueue中的数据(virtqueue_add的)取出来)------>rpmsg_recv_single调用rpmsg中的ept->cb（rpmsg_ept_cb, 将数据存入队列skb_queue_tail）------>唤醒等待数据锁(eptdev->readq)等待队列------>继续执行rpmsg_eptdev_read_iter拷贝数据到用户空间------>返回用户空间
 
 
 
 
 
-rpmsg_channel的创建
-open rpmsg_chrv设备节点时会创建一个ept(通过virtio_rpmsg_ops.create_ept)ept中注册了virtio_endpoint_ops
 
 
 
@@ -291,7 +303,6 @@ open rpmsg_chrv设备节点时会创建一个ept(通过virtio_rpmsg_ops.create_e
 
 
 
+  ```
 
-
-
-
+  ```
