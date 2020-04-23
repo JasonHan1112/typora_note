@@ -19,7 +19,7 @@ The whole communication implementation can be separated in three  different ISO/
 This is achieved by a technique called single-writer single-reader circular buffering.
 ![3](./attachments/image-20200417115535444.png)
 
-可以理解为每一个virtio_device会在probe的时候创建virtqueue，这个virtqueue是从vring中获取的
+可以理解为每一个virtio_device会在probe的时候创建virtqueue
 ![image-20200417150204759](./attachments/image-20200417150204759.png)
 
 
@@ -43,10 +43,6 @@ RPMsg endpoints provide logical connections on top of RPMsg channel. Every RPMsg
 ## RPMsg Frame
 
 The rpmsg component uses virtio-provided interfaces to transmit and receive data with its counterpart. As a transport abstraction, virtio provides two key interfaces to upper level users:
-
-kick（让本地产生一个信号，触发对端的中断）
-
-notify（让对端产生一个信号，出发本地中断）
 
 ![image-20200417151244633](./attachments/image-20200417151244633.png)
 
@@ -224,6 +220,8 @@ int fd_ept = open("/dev/rpmsg0", O_RDWR); // backend creates endpoint
   - rpmsg的接收
 
   中断触发后，之前注册（find_vqs）在virtio层的中断函数（vring_interrupt）开始执行，调用virtqueue回调(find_vqs)中注册回调（virtqueue也是在(find_vqs)中注册的）rpmsg_recv_done------>virtqueue_get_buf(从virtqueue中的数据(virtqueue_add的)取出来)------>rpmsg_recv_single调用rpmsg中的ept->cb（rpmsg_ept_cb, 将数据存入队列skb_queue_tail）------>唤醒等待数据锁(eptdev->readq)等待队列------>继续执行rpmsg_eptdev_read_iter拷贝数据到用户空间------>返回用户空间
+  
+  - 结构体vring_virtqueue中包含vring和相对应的virt_queue，都是内核数据结构，其中vring中包括desc，used，available指针，指向共享内存中的数据结构。desc used available的指针在vring_init中根据本地情况（x86或者arm）赋值，buff的地址在后边创建后赋值给desc（通过virtqueue_add_inbuf将recv_buff和desc联系起来）.两个平台的vring_virtqueue是内存的同一区域（vring_virtqueue->packed.vring.desc vring_virtqueue->packed.vring.avail vring_virtqueue->packed.vring.used都在共享内存中，双方内核中的数据结构存着相同的virtuqueue layout）
 
 
 

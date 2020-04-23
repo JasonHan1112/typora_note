@@ -149,3 +149,9 @@ start_kernel------>arch_call_rest_init------>rest_init------>kernel_init------>k
 
 ## only build one module
 make -C <source_path> M=<module_path> 
+
+## 内核插入编译出错提示
+
+Unknown symbol xxx
+
+编译时没出错说明链接时不缺少符号，但是还是报符号不知道，是因为缺少依赖。
