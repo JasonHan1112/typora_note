@@ -223,7 +223,36 @@ int fd_ept = open("/dev/rpmsg0", O_RDWR); // backend creates endpoint
   
   - 结构体vring_virtqueue中包含vring和相对应的virt_queue，都是内核数据结构，其中vring中包括desc，used，available指针，指向共享内存中的数据结构。desc used available的指针在vring_init中根据本地情况（x86或者arm）赋值，buff的地址在后边创建后赋值给desc（通过virtqueue_add_inbuf将recv_buff和desc联系起来）.两个平台的vring_virtqueue是内存的同一区域（vring_virtqueue->packed.vring.desc vring_virtqueue->packed.vring.avail vring_virtqueue->packed.vring.used都在共享内存中，双方内核中的数据结构存着相同的virtuqueue layout）
 
+- 每一侧的driver将buffer变成available，本侧的device将对侧driver发过来的available的数据变成used，X86侧device实现将arm侧driver放进共享内存的available的数据变成used，arm侧device实现将X86测的driver放进共享内存的available数据变成used。
 
+```
+                          +------------------------------------+
+                          |       virtio  guest driver         |
+                          +-----------------+------------------+
+                            /               |              ^
+                           /                |               \
+                          put            update             get
+                         /                  |                 \
+                        V                   V                  \
+                   +----------+      +------------+        +----------+
+                   |          |      |            |        |          |
+                   +----------+      +------------+        +----------+
+                   | available|      | descriptor |        |   used   |
+                   |   ring   |      |   table    |        |   ring   |
+                   +----------+      +------------+        +----------+
+                   |          |      |            |        |          |
+                   +----------+      +------------+        +----------+
+                   |          |      |            |        |          |
+                   +----------+      +------------+        +----------+
+                        \                   ^                   ^
+                         \                  |                  /
+                         get             update              put
+                           \                |                /
+                            V               |               /
+                           +----------------+-------------------+
+                           |       virtio host backend          |
+                           +------------------------------------+
+```
 
 
 
