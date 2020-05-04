@@ -112,6 +112,8 @@
 
 - scatterlist
 
+  多个scatterlist组成一个数组，以表示在物理上不连续的多个虚拟地址空间
+  
   ```c
   struct scatterlist {
   #ifdef CONFIG_DEBUG_SG         
@@ -130,7 +132,7 @@
       
           sg_assign_page(sg, page)//设置page_link的[63:2]=page,[1:0]=表示page_link状态
           sg_offset = offset;
-          sg_length = len;
+        sg_length = len;
   ```
-
+  
   
