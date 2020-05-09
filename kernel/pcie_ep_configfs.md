@@ -1,0 +1,13 @@
+# PCI endpoint frame
+
+# PCI endpoint configfs
+
+## configfs
+
+## pci ep configfs
+
+- 在插入pci-ep-cfs.ko模块的时候，会注册pci_ep_cfs_subsys，该subsys文件名是”pcie_ep“，还会在其中新建functions_group和controllers_group (functions文件夹和controllers文件夹)，但是其中的configfs_group_operations没有make_group和drop_item
+- 在pci_epf_register_driver的时候会向pci_ep_cfs中添加一个与pci_epf_driver名字相同的config_group (通过pci_ep_cfs_add_epf_group())
+- 上述添加的group的名字与pci_epf_driver的名字一致（pcie_asr_epf），为后续pci_epf_device probe的时候进行match，并且将pci_epf_group_type与config_group相绑定，在pci_epf_group_type中有make_group和drop_item方法，用于在configfs中创建和删除文件时回调。
+- 设置完config_group之后，会在configfs中以functions_group为父节点建立相应的目录和文件
+- 用户在configfs的pcie_asr_epf文件夹下mkdir时会调用之前注册在pci_epf_group_type下的make_group，从而创建了pci_epf_device，随后进行bus（pci-epf bus）的枚举，执行pci_epf_asr bus 的 driver中的probe。
