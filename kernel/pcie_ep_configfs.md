@@ -86,6 +86,8 @@ struct pci_epf {
 - 通过dw_plat_add_pcie_ep()创建了dw_pcie_ep设备，资源也是通过platform设备从设备树中拿取，从而通过devm_pci_epc_create()创建pci_epc。
 ## pci endpoint function初始化流程
 
+在系统中会注册上pci_epf的driver（pcie_ipc_ep_init()，其中注册完pci_epf的driver之后，会创建一个与pci_epf的driver同名的configfs_group，后续会在configfs中用到该名称创建pci_epf的device），随后通过configfs来创建pci_epf的device
+
 # PCI endpoint configfs
 
 ## configfs
