@@ -1,5 +1,7 @@
 # rpmsg+virtio
 
+**内核只实现了driver部分（前端），将used变成available，还需要实现device部分（后端），将available变成used的部分。**
+
 ## Protocol Layers
 
 The whole communication implementation can be separated in three  different ISO/OSI layers Transport, Media Access Control and Physical  layer. Each of them can be implemented separately
