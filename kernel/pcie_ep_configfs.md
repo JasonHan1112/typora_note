@@ -104,3 +104,4 @@ struct pci_epf {
 - 用户在configfs的pcie_asr_epf/functions文件夹下mkdir func1时会调用之前注册在pci_epf_group_type下的make_group，从而通过pci_epf_create创建了pci_epf_device，以及相关属性attrs(vendorid, deviceid, revid, msi_interrupts, subclass_code, baseclass_code等)随后进行bus（pci-epf bus）的枚举，执行pci_epf_asr bus 的 driver中的probe。
 - ln -s xxx/functions/func1 controllers/xxx (在controller中建立一个func1的软链接)该操作会调用allow_link（pci_epc_epf_link）向epc添加epf，并通过pci_epf_bind()去调用自己的epf中需要实现的回调。
 - 删除symbole link 会调用.drop_link，从而去调用pci_epf_unbind()（自己的epf中要实现的）
+- 给controllers/start中写1，让pcie链路training
