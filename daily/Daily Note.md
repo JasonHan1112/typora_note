@@ -374,3 +374,18 @@ vim --version | grep clipboard
   ```
   程序调用某函数A，A函数在两个动态库中（liba.so, libb.so）执行需要链接两个库，此时程序调用的A函数来自于哪个库呢？
   以上问题取决于链接的先后顺序，如果先链接liba.so，那么在到处符号表就可以看到函数A的定义，并加入到符号表中，链接libb.so的时候，符号表中已经存在A，就不会在更新符号表，那后续调用的始终是liba.so的A函数。为了避免后续的混乱，通过attribute来确定最终执行的是哪个函数。
+
+- 2020/5/28
+
+  gcc中({...})会被视为一条语句，该语句的结果是最后一条语句
+
+  ```c
+  #define typecheck(type, x)\
+  ({ type __dumy;\
+      typeof(x) __dummy2;\
+      (void)(&__dummy == &dummy2);\
+      1;\
+  })
+  ```
+
+  上述代码返回1

@@ -126,6 +126,14 @@ sudo apt-get install tmux
 - ctrl-b &　　关闭当前window
 - ctrl-b [   进入翻屏模式，q退出
 
+## nfs挂载
+
+在配置好nfs的机器上执行
+
+ sudo mount -t nfs 192.168.1.1:/root/workspace/hanxueqing/tmp /mnt
+
+将远程目录挂载到本地
+
 
 
 
