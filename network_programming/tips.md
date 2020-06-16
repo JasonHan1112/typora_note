@@ -281,3 +281,11 @@ int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t
 ![新建位图图像.bmp](attachments\5e673fe9.bmp)
 ![新建位图图像 (2).bmp](attachments\8d3a1be7.bmp)
 ![新建位图图像 (3).bmp](attachments\4c2c7123.bmp)
+
+## 给网络接口添加路由
+
+route add -host 192.168.1.11 dev xxxxinterface
+
+当一个机器在一个网段有多个网口时不要给每个网口都分ip，添加路由就可以
+
+-host表示该地址是主机地址，-dev表示该地址是子网地址
