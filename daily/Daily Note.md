@@ -389,3 +389,21 @@ vim --version | grep clipboard
   ```
 
   上述代码返回1
+
+- 2020/7/6
+
+  1. git lfs的安装：
+
+     sudo apt install git-lfs
+
+     git lfs install (install git lfs configuration)
+
+  2. git lfs的使用：
+
+     step 1: git lfs track "*.bin" (追踪仓库中的所有.bin文件)
+
+     step 2: git add . (注意一定要在step 1之后，并且一定要添加好.gitattributes)
+
+     step 3: git commit ...
+
+     step 4: git push origin master
