@@ -392,18 +392,54 @@ vim --version | grep clipboard
 
 - 2020/7/6
 
-  1. git lfs的安装：
+  - git lfs
 
-     sudo apt install git-lfs
+    1. git lfs的安装：
 
-     git lfs install (install git lfs configuration)
+       sudo apt install git-lfs
 
-  2. git lfs的使用：
+       git lfs install (install git lfs configuration)
 
-     step 1: git lfs track "*.bin" (追踪仓库中的所有.bin文件)
+    2. git lfs的使用(每一次有更改要提交的时候都需要执行下边的步骤)：
 
-     step 2: git add . (注意一定要在step 1之后，并且一定要添加好.gitattributes)
+       step 1: git lfs track "*.bin" (追踪仓库中的所有.bin文件，生成.gitattributes)
 
-     step 3: git commit ...
+       step 2: git add . (注意一定要在step 1之后，并且一定要添加好.gitattributes)
 
-     step 4: git push origin master
+       step 3: git commit ...
+
+       step 4: git push origin master
+       
+   3. git config --global credential.helper store (保存lfs devcenter的密码)
+  
+   - git 打补丁
+  
+     1. path 和 diff两种方案，git diff(只记录文件的改动)和git format-patch(记录文件改动并带有commit记录)
+     2. git format-patch [commit sha1 id] -n (n指的是从sha1 id对应的commit开始算起n个提交，如 -1 -2)
+     3. git format-patch [commit1 sha1 id]..[commit2 sha1 id]某两次提交的所有patch，会生成好多patch文件0001... 0002... 0003... 0004...
+     4. 打入patch: git apply --check [xxxx.patch]
+     5. 版本回退，patch撤销：
+        - git reset: 默认的方式，回退到某个版本，只保留回退前的源码，回退commit和index(暂存区)
+        - git reset --soft: 回退到某个版本，只回退了commit。index和源码都还保留，如果还需要提交只需要commit即可
+        - git reset --hard: 彻底回退到某个版本，本地的源码也会变成为上一个版本。
+     
+   - git submodule
+   
+  项目的版本库在某些情况下需要引用其他版本库中的文件，例如有一套公用的代码库，可以被多个项目调用，这个公用代码库能直接放在某个项目的代码中，而是要独立为一个代码库，那么其他要调用公用的代码库该如何处理？分别把公用的代码库拷贝到各自的项目中会造成冗余，丢弃了公共代码库的维护历史，这些显示不是好的办法，现在要了解的git子模组(**git submodule**)就解决了这个问题。
+      
+      - 制作submodules的仓库
+      
+        1. 将两个仓库分别建好。（repo1, repo2）
+        2. 将两个仓库分别拉到本地。
+        3. 在repo2中执行git submodule add ...../path/repo1.git ./lib，该操作进行submodule的关联
+      
+        
+      
+      - 使用submodules的仓库
+      
+        git submodule init
+      
+        git submodule update
+      
+      
+  
