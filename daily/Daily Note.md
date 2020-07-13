@@ -436,8 +436,8 @@ vim --version | grep clipboard
   
   ​      
   ​    
-      - 使用submodules的仓库
-      
+  ​    - 使用submodules的仓库
+  ​    
         git submodule init
       
         git submodule update
@@ -445,7 +445,6 @@ vim --version | grep clipboard
   
   ​    
   
-
 - 2020/7/7
 
   ### gdb交互命令
@@ -523,3 +522,46 @@ vim --version | grep clipboard
   - layout regs：显示源代码/反汇编和CPU寄存器窗口
   - layout split：显示源代码和反汇编窗口
   - Ctrl + L：刷新窗口ll
+
+- 2020/7/10
+
+  - python logging简单使用
+
+    ```python
+    import os
+    import logging  # 引入logging模块
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')  # logging.basicConfig函数对日志的输出格式及方式做相关配置
+    # 由于日志基本配置中级别设置为DEBUG，所以一下打印信息将会全部显示在控制台上
+    #fh = logging.FileHandler(logfile, mode='w')
+    #fh.setLevel(logging.DEBUG)  # 输出到file的log等级的开关
+    def test_log():
+        logging.info('this is a loggging info message')
+        logging.debug('this is a loggging debug message')
+        logging.warning('this is loggging a warning message')
+        logging.error('this is an loggging error message')
+        logging.critical('this is a loggging critical message')
+    
+    def test_log_file():
+        #set path/file
+        log_path = os.path.dirname(os.getcwd())
+        log_name = log_path + '/log'
+        logfile = log_name
+        logging.info(log_name)
+        #set logger
+        logger = logging.getLogger()
+        fh = logging.FileHandler(logfile, mode='w')
+        fh.setLevel(logging.DEBUG)  # 输出到file的log等级的开关
+        formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+        #logging
+        logging.info('this is a loggging_file info message')
+        logging.debug('this is a loggging_file debug message')
+        logging.warning('this is loggging_file a warning message')
+        logging.error('this is an loggging_file error message')
+        logging.critical('this is a loggging_file critical message')
+    ```
+
+  
+
