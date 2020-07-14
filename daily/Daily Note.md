@@ -397,7 +397,8 @@ vim --version | grep clipboard
     1. git lfs的安装：
 
        sudo apt install git-lfs
-
+       git config --global lfs.url "http://devcenter.bj.sensetime.com/api/v1/lfs/"
+       git config --global credential.helper store
        git lfs install (install git lfs configuration)
 
     2. git lfs的使用(每一次有更改要提交的时候都需要执行下边的步骤)：
@@ -405,9 +406,9 @@ vim --version | grep clipboard
        step 1: git lfs track "*.bin" (追踪仓库中的所有.bin文件，生成.gitattributes)
 
        step 2: git add . (注意一定要在step 1之后，并且一定要添加好.gitattributes)
-
+    
        step 3: git commit ...
-
+    
        step 4: git push origin master
        
    3. git config --global credential.helper store (保存lfs devcenter的密码)
@@ -438,8 +439,8 @@ vim --version | grep clipboard
   ​    
   ​    - 使用submodules的仓库
   ​    
-        git submodule init
-      
+  ​      git submodule init
+  ​    
         git submodule update
   
   
