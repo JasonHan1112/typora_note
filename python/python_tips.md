@@ -502,9 +502,238 @@ GET请求会将请求通过URL网址传递信息，将信息转话到URL中向�
 - OPTIONS：
 可以获取当前URL所支持的请求类型
 
+## XPath
 
+    XPath，全称 XML Path Language，即 XML 路径语言，它是一门在 XML 文档中查找信息的语言。初是用来搜寻 XML 文档的，但同样适用于 HTML 文档的搜索。所以在做爬虫时完全可以使用XPath 做相应的信息抽取。python中使用lxml库
 
+  - 常用规则
 
+    | 表达式   | 描述                     |
+    | -------- | ------------------------ |
+    | nodename | 选取此节点的所有子节点   |
+    | /        | 从当前节点选区直接子节点 |
+    | //       | 从当前节点选取子孙节点   |
+    | .        | 选取当前节点             |
+    | ..       | 选取当前节点的父节点     |
+    | @        | 选取属性                 |
 
+  - 用以 // 开头的 XPath 规则来选取所有符合要求的节点
 
+    ```python
+    from lxml import etree
+    html = etree.parse('./test.html', etree.HTMLParser())
+    result = html.xpath('//li') #选取所有的li的节点
+    print(result)
+    ```
+
+  - 通过 / 或 // 即可查找元素的子节点或子孙节点。选择 li 节点的所有直接 a 子节点
+
+    ```python
+    from lxml import etree
+    html = etree.parse('.test.html', etree.HTMLParser())
+    result = html.xpath('//li/a') #选取所有的li节点下的直接a子节点
+    print(result)
+    ```
+
+  - 知道子节点，查询父节点可以用 .. 来实现
+
+    ```python
+    from lxml import etree
+    html = etree.parse('./test.html', etree.HTMLParser())
+    #a节点href属性为link4.html的节点且属性为class的节点的父节点
+    result = html.xpath('//a[@href="link4.html"]/../@class')
+    print(result)
+    ```
+
+  - 属性匹配
+
+    ```python
+    from lxml import etree
+    html = etree.parse('./test.html', etree.HTMLParser())
+    #li节点，并且class属性为item-inactive
+    result = html.xpath('//li[@class="item-inactive"]')
+    print(result)
+    ```
+
+  - 文本获取
+
+    ```python
+    from lxml import etree
+    html = etree.parse('./test.html', etree.HTMLParser())
+    #获取li节点，class属性为item=0子节点的文本
+    result = html.xpath('//li[@class="item-0"]/a/text()')
+    print(result)
+    ```
+
+  - 属性获取
+
+    ```python
+    from lxml import etree
+    html = etree.parse('./test.html', etree.HTMLParser())
+    #获取li节点字节点为a，属性为href的值
+    result = html.xpath('//li/a/@href')
+    print(result)
+    ```
+
+  - 属性多值匹配
+
+    ```python
+    from lxml import etree
+    text = '''
+    <li class="li li-first"><a href="link.html">first item</a></li>
+    '''
+    html = etree.HTML(text)
+    #li节点class属性包含li字节点为a的文字
+    result = html.xpath('//li[contains(@class, "li")]/a/text()')
+    print(result)
+    ```
+
+  - 扩展运算符
+
+    | 运算符 | 描述           | 实例              | 返回值                               |
+    | :----- | :------------- | :---------------- | :----------------------------------- |
+    | or     | 或             | age=18 or age=20  | age=18：True；age=21：False          |
+    | and    | 与             | age>18 and age<21 | age=20：True；age=21：False          |
+    | mod    | 计算除法的余数 | 5 mod 2           | 1                                    |
+    | \|     | 计算两个节点集 | //book \| //cd    | 返回所有拥有 book 和 cd 元素的节点集 |
+    | +      | 加法           | 5 + 3             | 8                                    |
+    | -      | 减法           | 5 - 3             | 2                                    |
+    | *      | 乘法           | 5 * 3             | 15                                   |
+    | div    | 除法           | 8 div 4           | 2                                    |
+    | =      | 等于           | age=19            | 判断简单，不再赘述                   |
+    | !=     | 不等于         | age!=19           | 判断简单，不再赘述                   |
+    | <      | 小于           | age<19            | 判断简单，不再赘述                   |
+    | <=     | 小于等于       | age<=19           | 判断简单，不再赘述                   |
+    | >      | 大于           | age>19            | 判断简单，不再赘述                   |
+    | >=     | 大于等于       | age>=19           | 判断简单，不再赘述                   |
+
+  - 按照顺序选择
+
+    匹配结果有多个节点，需要选中第二个或最后一个，可以按照中括号内加索引或其他相应语法获得：
+
+      ```python
+      from lxml import etree
+      text = '''
+      <div>
+      <ul>
+      <li class="item-0"><a href="link1.html">first item</a></li>
+      <li class="item-1"><a href="link2.html">second item</a></li>
+      <li class="item-inactive"><a href="link3.html">third item</a></li>
+      <li class="item-1"><a href="link4.html">fourth item</a></li>
+      <li class="item-0"><a href="link5.html">fifth item</a>
+      </ul>
+      </div>
+      '''
+      html = etree.HTML(text)
+      # 获取第一个
+      result = html.xpath('//li[1]/a/text()')
+      print(result)
+      # 获取最后一个
+      result = html.xpath('//li[last()]/a/text()')
+      print(result)
+      # 获取前两个
+      result = html.xpath('//li[position()<3]/a/text()')
+      print(result)
+      # 获取倒数第三个
+      result = html.xpath('//li[last()-2]/a/text()')
+      print(result)
+      
+      """
+      运行结果：
+      ['first item']
+      ['fifth item']
+      ['first item', 'second item']
+      ['third item']
+      """
+      ```
+
+  - 节点轴选择
+    XPath 提供了很多节点轴选择方法，包括子元素、兄弟元素、父元素、祖先元素等：
+
+  ```python
+  from lxml import etree
+  
+  text = '''
+  <div>
+  <ul>
+  <li class="item-0"><a href="link1.html"><span>first item</span></a>    </li>
+  <li class="item-1"><a href="link2.html">second item</a></li>
+  <li class="item-inactive"><a href="link3.html">third item</a></li>
+  <li class="item-1"><a href="link4.html">fourth item</a></li>
+  <li class="item-0"><a href="link5.html">fifth item</a>
+  </ul>
+  </div>
+  '''
+  
+  html = etree.HTML(text)
+  # 获取所有祖先节点
+  result = html.xpath('//li[1]/ancestor::*')
+  print(result)
+  # 获取 div 祖先节点
+  result = html.xpath('//li[1]/ancestor::div')
+  print(result)
+  # 获取当前节点所有属性值
+  result = html.xpath('//li[1]/attribute::*')
+  print(result)
+  # 获取 href 属性值为 link1.html 的直接子节点
+  result = html.xpath('//li[1]/child::a[@href="link1.html"]')
+  print(result)
+  # 获取所有的的子孙节点中包含 span 节点但不包含 a 节点
+  result = html.xpath('//li[1]/descendant::span')
+  print(result)
+  # 获取当前所有节点之后的第二个节点
+  result = html.xpath('//li[1]/following::*[2]')
+  print(result)
+  # 获取当前节点之后的所有同级节点
+  result = html.xpath('//li[1]/following-sibling::*')
+  print(result)
+  
+  """
+  [<Element html at 0x231a8965388>, <Element body at 0x231a8965308>,     <Element div at 0x231a89652c8>, <Element ul at 0x231a89653c8>]
+  [<Element div at 0x231a89652c8>]
+  ['item-0']
+  [<Element a at 0x231a89653c8>]
+  [<Element span at 0x231a89652c8>]
+  [<Element a at 0x231a89653c8>]
+  [<Element li at 0x231a8965308>, <Element li at 0x231a8965408>, <Element   li at 0x231a8965448>, <Element li at 0x231a8965488>]
+  """
+  ```
+
+## python logging简单使用
+
+    ```python
+    import os
+    import logging  # 引入logging模块
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')  # logging.basicConfig函数对日志的输出格式及方式做相关配置
+    # 由于日志基本配置中级别设置为DEBUG，所以一下打印信息将会全部显示在控制台上
+    #fh = logging.FileHandler(logfile, mode='w')
+    #fh.setLevel(logging.DEBUG)  # 输出到file的log等级的开关
+    def test_log():
+        logging.info('this is a loggging info message')
+        logging.debug('this is a loggging debug message')
+        logging.warning('this is loggging a warning message')
+        logging.error('this is an loggging error message')
+        logging.critical('this is a loggging critical message')
+    
+    def test_log_file():
+        #set path/file
+        log_path = os.path.dirname(os.getcwd())
+        log_name = log_path + '/log'
+        logfile = log_name
+        logging.info(log_name)
+        #set logger
+        logger = logging.getLogger()
+        fh = logging.FileHandler(logfile, mode='w')
+        fh.setLevel(logging.DEBUG)  # 输出到file的log等级的开关
+        formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+        #logging
+        logging.info('this is a loggging_file info message')
+        logging.debug('this is a loggging_file debug message')
+        logging.warning('this is loggging_file a warning message')
+        logging.error('this is an loggging_file error message')
+        logging.critical('this is a loggging_file critical message')
+    ```
 
