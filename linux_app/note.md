@@ -93,6 +93,7 @@ Tmux 就是会话与窗口的"解绑"工具，将它们彻底分离。
 sudo apt-get install tmux
 ## 使用
 - tmux list-session：显示当前server中已经打开的的tmux session
+- tmux new -s xxx：打开新的session
 - tmux attach -t xxx：当前窗口与session xxx进行attach
 - tmux kill-session -t xxx：杀掉session xxx
 - tmux rename -t s1 s2　　重命名会话s1为s2
