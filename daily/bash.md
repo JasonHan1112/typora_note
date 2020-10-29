@@ -259,3 +259,16 @@ let z1=$x+$y;       echo $z1    # output: 8
     - popd不带任何参数执行的效果，就是将目录栈中的栈顶元素出栈。
     - 将目录栈中的第n个元素删除(这里的n就是命令`dirs -v`显示的目录index)。
     - +n的含义是从栈顶往栈底方向进行计数，从0开始；-n的含义刚好相反，从栈底向栈顶方向计数，从0开始。
+- 通过bash对串口进行操作
+    ```c
+    stty -F /dev/ttyS1 raw ispeed 115200 ospeed 115200 cs8 -parenb -cstopb -echo -ixoff
+    exec 99</dev/ttyS1
+    cat <&99 > /tmp/ttyDump.dat &
+    PID=$!
+    echo -ne "\x5c\x8d\x00\x4b\x00\xb5\x5c\xd8" > /dev/ttyS1
+    sleep 0.2s
+    kill $PID
+    wait $PID 2>/dev/null
+    exec 99<&-
+    hexdump -e '16/1 "%02x" "\n"' /tmp/ttyDump.dat
+    ```
