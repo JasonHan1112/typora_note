@@ -58,3 +58,139 @@
     
 - pcibios_init
 
+## ASR PCIe Endpoint Frame
+- uboot
+配置好PCIe基础的配置（配置空间，中断一类），可以进行正常通信。
+- PCIe Endpoint Frame简介
+PCIe Endpoint Frame分为两部分，EPC和EPF，使用时通过configfs将EPC和EPF绑定，完成正常的功能。
+- PCIe EPC的枚举与初始化
+1. ASR将其设置成platform，通过
+```c
+static const struct of_device_id of_asr_pcie_match[] = {
+        {
+                .compatible = "asr,dwc-pcie",
+                .data = &asr_pcie_rc_of_data,
+        },
+        {
+                .compatible = "asr,dwc-pcie-ep",
+                .data = &asr_pcie_ep_of_data,
+        },
+        {},
+};
+
+```
+进行match
+2. asr_pcie_probe为__init属性，内核启动时进行调用，其中
+```c
+match = of_match_device(of_match_ptr(of_asr_pcie_match), dev);
+if (!match)
+                return -EINVAL;
+```
+dtb中的of_node和内核中的of_asr_pcie_match match成功后，进入资源的分配和赋值。
+```c
+struct dw_pcie {
+        struct device           *dev;
+        void __iomem            *dbi_base; /*local access(back-door) to resgister, can change some pci-sig register R/W*/
+        void __iomem            *dbi_base2; /*local access(back-door) to some read only shadow iatu and dma regster*/
+        void __iomem            *elbi_base;
+        void __iomem            *dbi_iatu;
+        void __iomem            *dma_base;
+        u32                     num_viewport;
+        u8                      iatu_unroll_enabled;
+        int                     pcie_init_before_kernel;
+        struct pcie_port        pp;
+        struct dw_pcie_ep       ep;
+        const struct dw_pcie_ops *ops;
+};
+
+struct asr_pcie {
+        struct dw_pcie          *pci;
+        void __iomem            *base;          /* DT asr_conf */
+        void __iomem            *phy_ahb;               /* DT phy_ahb */
+        int                     phy_count;      /* DT phy-names count */
+        struct phy              **phy;
+        int                     link_gen;
+        struct irq_domain       *irq_domain;
+        enum dw_pcie_device_mode mode;
+        struct  clk *clk_pcie;  /*include master slave slave_lite clk*/
+        struct  clk *clk_master;
+        struct  clk *clk_slave;
+        struct  clk *clk_slave_lite;
+
+        struct  gpio_desc *perst_gpio; /* for PERST# in RC mode*/
+
+};
+
+```
+以上资源为从dtb中获取赋值和填充的变量(asr_conf, phy_ahb, pcie-clk, link_gen, dw_pcie_ops, link_gen, dw_pcie_ops.start_link(assert phystart training建立链路), dw_pcie_ops.stop_link(设置ltssm到detect quite), dw_pcie_ops.link_up(判断pl和dl是否已经成功连接), irq(pcie报给arm的)),确定max link speed（link_gen）为gen3。
+3. 判断是否pcie在之前已经初始化完成(通过uboot传递的boot args)，现在已经设置在uboot阶段初始化完成（pcie链路也在uboot阶段已经建立）。
+4. 通过of_asr_pcie_match->mode来确定pcie是做ep还是rc（目前是做ep, 通过配置PCIECTRL_ASR_CONF_DEVICE_CMD等相关寄存器），添加相关设备（asr_add_pcie_ep asr_add_pcie_port）
+5. 分析asr_add_pcie_ep
+赋值dw_pcie结构体中其他的成员（dbi_base, dbi_base2, elbi_base, dbi_iatu, dma, addr_space）；
+创建dw_pcie_ep结构体
+```c
+struct dw_pcie_ep {
+        struct pci_epc          *epc;/*重要结构体*/
+        struct dw_pcie_ep_ops   *ops;
+        phys_addr_t             phys_base;
+        size_t                  addr_size;
+        size_t                  page_size;
+        u8                      bar_to_atu[6];
+        phys_addr_t             *outbound_addr;
+        unsigned long           *ib_window_map;
+        unsigned long           *ob_window_map;
+        u32                     num_ib_windows;
+        u32                     num_ob_windows;
+        void __iomem            *msi_mem;
+        phys_addr_t             msi_mem_phys;
+};
+```
+赋值ep->phys_base="addr_space" 0x8400000, 执行dw_pcie_ep_init;
+6. 分析dw_pcie_ep_init
+判断dw_pcie->dbi_base, dw_pcie->dbi_base2是否正确；
+读取of_node中num-ib-windows，num_ob_windows(用来做地址转换用的窗口)的数量，并检查其合法性，以及分配地址；
+执行ep_init;
+7. 分析ep_init(asr_pcie_ep_init)
+获取到之前创建的dw_pcie和asr_pcie;
+asr_pcie_enable_wrapper_interrupts,通过配置elbi的寄存器使pcie到soc的中断使能，相关dma中断mask打开。执行devm_pci_epc_create
+8. 分析devm_pci_epc_create
+调用pci-epc-core.c中的__devm_pci_epc_create->__pci_epc_create,初始化设备，填充pci_epc结构体(主要opsa), pci_ep_cfs_add_epc_group配置好epc的configfs的group
+9. 配置epc的max_functions = 1，配置epc的addr space（从之前dw_pcie_ep中的值中获取(phys_base 0x8400000)）,从epc的mem中获取ep->msi_mem的空间，设置epc的feature为EPC_FEATURE_NO_LINKUP_NOTIFIER，建立dw_pcie_ep->epc = epc，如果pcie_init_before_kernel=0则执行dw_pcie_setup;
+10. 分析dw_pcie_setup
+通过设备树获得"num-lanes"，通过dbi给控制器配置链路的速度和
+11. devm_request_irq(dev, irq, asr_pcie_irq_handler, IRQF_SHARED, "asr-pcie", asr)，注册中断处理函数asr_pcie_irq_handle
+12. 分析asr_pcie_irq_handle
+读取PCIE_ELBI_EP_DMA_IRQ_STATUS的中断寄存器并清零irq状态；查看中断寄存器中是哪一位置起来了（reg = dw_pcie_readl_elbi(pci, PCIE_ELBI_EP_DMA_IRQ_STATUS)）; if (reg & PC_TO_STPU_INT)调用bind时注册的函数（asr_pcie_irq_callback(num)后续分析该函数）; if(reg & DMA_READ_INT), dma 读完成，检查dma中断源以及是否发生错误，如果发生错误则处理错误打印log，如果没有错误则执行业务的中断处理函数asr_pcie_irq_callback
+
+- PCIe EPF初始化(pnet)
+1. pcie_ipc_ep_init编译到__init区域，通过pci_epf_register_driver注册epf driver bus和configfs
+2. 在configfs中pci_epf_make(config_group_init_type_name pci_epf_create)会在mkdir的时候执行从而创建epf_device
+3. 匹配之后会调用bus_type中的pci_epf_device_probe, 从dtb中找到"reserved-memory"节点，在其中找到"pcie-bar"节点中的数值作为bar空间地址，调用相关pci_epf_driver的probe(pci_epf_asr_probe)
+4. 分析pci_epf_asr_probe，通过match匹配到epf device后，创建pci_epf_asr(pnet)，填充pci_epf_asr->header和pci_epf_asr->epf
+- PCIe EPF和EPC的绑定
+1. pci_ep_cfs_init创建pci_ep/functions，pci_ep/controllers
+2. 挂载好configfs后会出现两个文件夹，pci_ep_cfs_add_epf_group创建pci_epf_asr, pci_ep_cfs_add_epc_group创建
+3. mkdir functions/pci_epf_asr/func1; 在pci_epf_asr文件夹中创建func1，回调pci_epf_make，其中文件夹中有pci_epf_attrs(vendorid, deviceid, revid...)通过store和show写入和读取, 创建epf_deivce(通过pci_epf_create),
+4. ln -s functions/pci_epf_asr/func1 controller/8000000.pcie/;会去调用pci_epc_epf_link，在其中会将epc和epf结构连接，并调用epf中的bindi(pci_epf_asr_bind)进行功能的初始化相关function。
+5. 分析pci_epf_asr_bind，通过pci_epc_write_header配置config空间的寄存器（通过dbi的方式去配），pci_epf_alloc_space，给epf分配bar空间(dma_alloc_coherent),并存下来bar空间的物理地址和size和bar_number，设置bar空间的inbound_atu的地址映射，pci_epc_set_msi设置msi中断,设置DMA收发数据的缓存区作为pnet收发数据的缓存区，初始化pnet_init
+6. 分析pnet_init
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
