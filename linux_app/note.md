@@ -126,6 +126,10 @@ sudo apt-get install tmux
 - ctrl-b f　　根据显示的内容搜索pane
 - ctrl-b &　　关闭当前window
 - ctrl-b [   进入翻屏模式，q退出
+- ctrl-b x   删除当前pane
+- ctrl-b 'space'   调整pane水平垂直分布
+- ctrl-b &   删除窗口
+
 
 ## nfs挂载
 
