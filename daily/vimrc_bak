@@ -4,6 +4,7 @@
 call plug#begin('~/.vim/plugged')
 
 " Declare the list of plugins.
+Plug 'majutsushi/tagbar'
 Plug 'scrooloose/nerdtree'
 Plug 'morhetz/gruvbox'
 Plug 'octol/vim-cpp-enhanced-highlight'
@@ -17,12 +18,15 @@ call plug#end()
 colorscheme gruvbox
 set background=dark    " Setting dark mode
 
-nnoremap <F8> :NERDTreeToggle<CR>
+nnoremap <F9> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
+nmap <F8> :TagbarToggle<CR>
+"let g:tagbar_left = 1 
 
 
 
 
+set hlsearch
 set nu
 syntax on
 set autoindent
