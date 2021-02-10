@@ -10,6 +10,103 @@ support the needs of complex graphics devices. gracphic drivers in the kernel ma
 - a device instance for a drm driver is represented by *struct drm_device* this is allocated and initialized with *devm_drm_dev_alloc()*, usually from bus-specific-probe() callbacks implemented by the driver. the driver then needs to initialize all the various subsystems for the drm device like memory management, vblank handling, modesetting support and initial output configuiration plus obvious initialize all th corresponding hardware bites. when everything is up and running and ready for userspace the device instance can be published using *drm_dev_register()*.
 - The driver must protect regions that is accessing device resources to prevent use after they’re released. This is done using drm_dev_enter() and drm_dev_exit().
 
+```c
+struct drm_device {
+  struct list_head legacy_dev_list; //legacy, list of devices per driver
+  int if_version;   //highest interface verion set
+  struct kref ref;
+  struct device *dev;
+  struct drm_driver *driver;    //drm driver managing the device
+  void *dev_private;
+  struct drm_minor *primary;    //primary node
+  struct drm_minor *render; //render node
+  bool registered; //internally used by drm_dev_register() and drm_connector_register()
+  struct drm_master *master;
+  u32 driver_features;  //per-device driver features
+  bool unplugged;
+  struct inode *anon_inode;
+  char *unique; //unique name of the device
+  struct mutex struct_mutex;
+  struct mutex master_mutex;
+  atomic_t open_count;
+  struct mutex filelist_mutex;
+  struct list_head filelist;
+  struct list_head filelist_internal;
+  struct mutex clientlist_mutex;
+  struct list_head clientlist;
+  bool irq_enabled;
+  int irq;
+  bool vblank_disable_immediate;
+  struct drm_vblank_crtc *vblank;
+  spinlock_t vblank_time_lock;
+  spinlock_t vbl_lock;
+  u32 max_vblank_count;
+  struct list_head vblank_event_list;
+  spinlock_t event_lock;
+  struct drm_agp_head *agp;
+  struct pci_dev *pdev; //pci device structure
+#ifdef __alpha__;
+  struct pci_controller *hose;
+#endif;
+  unsigned int num_crtcs;   //number of crtc on this device
+  struct drm_mode_config mode_config;
+  struct mutex object_name_lock;
+  struct idr object_name_idr;
+  struct drm_vma_offset_manager *vma_offset_manager;
+  struct drm_vram_mm *vram_mm; //VRAM MM memory manager
+  enum switch_power_state switch_power_state;
+  struct drm_fb_helper *fb_helper;  //pointer to the fbdev emulation structure. Set by drm_fb_helper_init()
+};
+
+struct drm_driver {
+  int (*load) (struct drm_device *, unsigned long flags);   //backward-compatible driver callback to complete initialization
+  int (*open) (struct drm_device *, struct drm_file *); //driver callback when a new struct drm_file is opened
+  void (*postclose) (struct drm_device *, struct drm_file *);   //the display/modeset side of DRM can only be owned by exactly one struct drm_file
+  void (*lastclose) (struct drm_device *);
+  void (*unload) (struct drm_device *);
+  void (*release) (struct drm_device *);
+  irqreturn_t(*irq_handler) (int irq, void *arg);   //Interrupt handler called when using drm_irq_install().
+  void (*irq_preinstall) (struct drm_device *dev);  //Optional callback used by drm_irq_install() which is called before the interrupt handler is registered. 
+  int (*irq_postinstall) (struct drm_device *dev);  //Optional callback used by drm_irq_install() which is called after the interrupt handler is registered. 
+  void (*irq_uninstall) (struct drm_device *dev);
+  int (*master_set)(struct drm_device *dev, struct drm_file *file_priv, bool from_open);
+  void (*master_drop)(struct drm_device *dev, struct drm_file *file_priv);
+  int (*debugfs_init)(struct drm_minor *minor);
+  void (*gem_free_object) (struct drm_gem_object *obj);
+  void (*gem_free_object_unlocked) (struct drm_gem_object *obj);
+  int (*gem_open_object) (struct drm_gem_object *, struct drm_file *);  //This callback is deprecated in favour of drm_gem_object_funcs.open 通过drm的ioctl,或者drm_framebuffer_funcs
+  void (*gem_close_object) (struct drm_gem_object *, struct drm_file *);    //This callback is deprecated in favour of drm_gem_object_funcs.close.
+  void (*gem_print_info)(struct drm_printer *p, unsigned int indent, const struct drm_gem_object *obj);
+  struct drm_gem_object *(*gem_create_object)(struct drm_device *dev, size_t size);
+  int (*prime_handle_to_fd)(struct drm_device *dev, struct drm_file *file_priv, uint32_t handle, uint32_t flags, int *prime_fd);
+  int (*prime_fd_to_handle)(struct drm_device *dev, struct drm_file *file_priv, int prime_fd, uint32_t *handle);
+  struct dma_buf * (*gem_prime_export)(struct drm_gem_object *obj, int flags);
+  struct drm_gem_object * (*gem_prime_import)(struct drm_device *dev, struct dma_buf *dma_buf);
+  int (*gem_prime_pin)(struct drm_gem_object *obj);
+  void (*gem_prime_unpin)(struct drm_gem_object *obj);
+  struct sg_table *(*gem_prime_get_sg_table)(struct drm_gem_object *obj);
+  struct drm_gem_object *(*gem_prime_import_sg_table)(struct drm_device *dev,struct dma_buf_attachment *attach, struct sg_table *sgt);
+  void *(*gem_prime_vmap)(struct drm_gem_object *obj);
+  void (*gem_prime_vunmap)(struct drm_gem_object *obj, void *vaddr);
+  int (*gem_prime_mmap)(struct drm_gem_object *obj, struct vm_area_struct *vma);
+  int (*dumb_create)(struct drm_file *file_priv,struct drm_device *dev, struct drm_mode_create_dumb *args); //This creates a new dumb buffer in the driver's backing storage manager This handle can then be wrapped up into a framebuffer modeset object
+  int (*dumb_map_offset)(struct drm_file *file_priv,struct drm_device *dev, uint32_t handle, uint64_t *offset);
+  int (*dumb_destroy)(struct drm_file *file_priv,struct drm_device *dev, uint32_t handle);
+  const struct vm_operations_struct *gem_vm_ops;
+  int major;
+  int minor;
+  int patchlevel;
+  char *name;
+  char *desc;
+  char *date;
+  u32 driver_features;
+  const struct drm_ioctl_desc *ioctls;
+  int num_ioctls;
+  const struct file_operations *fops;   //drm device file_operations
+};
+```
+
+
 ## DRM Memory Management
 
 - Modern Linux systems require large amount of graphics memory to store frame buffers, textures, vertices and other graphics-related data. Given the very dynamic nature of many of that data, managing graphics memory efficiently is thus crucial for the graphics stack and plays a central role in the DRM infrastructure.
@@ -87,14 +184,107 @@ support the needs of complex graphics devices. gracphic drivers in the kernel ma
 
 - Client programs construct command buffers containing references to previously allocated memory objects, and then submit them to GEM. At that point, GEM takes care to bind all the objects into the GTT, execute the buffer, and provide necessary synchronization between clients accessing the same buffers. This often involves evicting some objects from the GTT and re-binding others (a fairly expensive operation), and providing relocation support which hides fixed GTT offsets from clients. Clients must take care not to submit command buffers that reference more objects than can fit in the GTT; otherwise, GEM will reject them and no rendering will occur. Similarly, if several objects in the buffer require fence registers to be allocated for correct rendering (e.g. 2D blits on pre-965 chips), care must be taken not to require more fence registers than are available to the client. Such resource management should be abstracted from the client in libdrm.
 
+## GEM frame 数据结构 
+
+```c
+struct drm_gem_object_funcs {
+  void (*free)(struct drm_gem_object *obj); //Deconstructor for drm_gem_objects.
+  int (*open)(struct drm_gem_object *obj, struct drm_file *file);   //Called upon GEM handle creation.
+  void (*close)(struct drm_gem_object *obj, struct drm_file *file); //Called upon GEM handle release.
+  void (*print_info)(struct drm_printer *p, unsigned int indent, const struct drm_gem_object *obj);
+  struct dma_buf *(*export)(struct drm_gem_object *obj, int flags); //Export backing buffer as a dma_buf. Optional
+  int (*pin)(struct drm_gem_object *obj);   //Pin backing buffer in memory. Used by the drm_gem_map_attach() helper.
+  void (*unpin)(struct drm_gem_object *obj);    //Unpin backing buffer. Used by the drm_gem_map_detach() helper.
+  struct sg_table *(*get_sg_table)(struct drm_gem_object *obj);
+  void *(*vmap)(struct drm_gem_object *obj);    //Returns a virtual address for the buffer. Used by the drm_gem_dmabuf_vmap() helper.
+  void (*vunmap)(struct drm_gem_object *obj, void *vaddr);
+  int (*mmap)(struct drm_gem_object *obj, struct vm_area_struct *vma);  //Virtual memory operations used with mmap.
+  const struct vm_operations_struct *vm_ops;    //Virtual memory operations used with mmap.
+};
+
+//This structure defines the generic parts for GEM buffer objects, which are mostly around handling mmap and userspace handles.
+struct drm_gem_object {
+  struct kref refcount; //Reference count of this object
+  unsigned handle_count;    //This is the GEM file_priv handle count of this object.
+  struct drm_device *dev;
+  struct file *filp;
+  struct drm_vma_offset_node vma_node;
+  size_t size;
+  int name;
+  struct dma_buf *dma_buf;
+  struct dma_buf_attachment *import_attach;
+  struct dma_resv *resv;
+  struct dma_resv _resv;
+  const struct drm_gem_object_funcs *funcs; //Optional GEM object functions. If this is set, it will be used instead of the corresponding drm_driver GEM callbacks. New drivers should use this.
+};
+```
+- 
+## DRM by ASR initialize
+
+### 在ASR的数据结构中将drm_device注册为miscdevice的子设备
+    首先注册miscdevice，并设置DMA_BIT_MASK(64)
+    ```c
+    static const struct file_operations asr_drm_miscdev_fops = {
+        .owner = THIS_MODULE,
+    };
+
+    static struct miscdevice asr_drm_miscdev = {
+        .minor = MISC_DYNAMIC_MINOR,
+        .name = "asrdrm",
+        .fops = &asr_drm_miscdev_fops,
+    };
+
+    ```
+### 使用asr_drm_driver创建drm设备
+
+    drm_dev_alloc(&asr_drm_driver, asr_drm_miscdev.this_device);
+    ```c
+    static struct drm_driver asr_drm_driver = {
+    .driver_features    = DRIVER_GEM | DRIVER_PRIME,
+    .gem_vm_ops     = &asr_drm_vm_ops,
+    .gem_free_object    = asr_gem_free_object,
+    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
+    .prime_fd_to_handle = drm_gem_prime_fd_to_handle,
+    .gem_prime_import   = drm_gem_prime_import,
+    .gem_prime_export   = drm_gem_prime_export,
+    .gem_prime_get_sg_table = asr_gem_prime_get_sg_table,
+    .gem_prime_vmap     = asr_gem_prime_vmap,
+    .gem_prime_vunmap   = asr_gem_prime_vunmap,
+    .gem_prime_mmap     = asr_gem_prime_mmap,
+    .open           = asr_drm_open,
+    .ioctls         = ioctls,
+#if defined(CONFIG_DEBUG_FS)
+    .debugfs_init       = asr_drm_debugfs_init,
+#endif
+    .num_ioctls     = ASR_DRM_NUM_IOCTLS,
+    .fops           = &asr_drm_driver_fops,
+    .name           = DRIVER_NAME,
+    .desc           = DRIVER_DESC,
+    .date           = DRIVER_DATE,
+    .major          = DRIVER_MAJOR,
+    .minor          = DRIVER_MINOR,
+};
+
+    ```
+### 设置unique
+    drm_dev_set_unique(drm, "asrdrm");
 
 
+### 创建drm private data
+    asr_drm_priv_init(struct drm_device *drm)
+        |
+        asr_drm_mempool_init(priv)
+    - 查找reserved-memory的子节点gem-pool的地址及大小
+    - dev_private中保存了gem-pool的大小和起始地址
 
-
-
-
-
-
+### 注册drm_dev
+    drm_dev_register(drm, 0);
+        |
+        drm_minor_register(dev, DRM_MINOR_CONTROL);
+        drm_minor_register(dev, DRM_MINOR_RENDER);
+        drm_minor_register(dev, DRM_MINOR_PRIMARY);
+        dev->driver->load
+        如果有DRIVER_MODESET还要注册MODESET(ASR只是drm以及gem)
 
 
 
