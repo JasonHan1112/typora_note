@@ -131,6 +131,11 @@ struct drm_driver {
 
 - driver-specific init and release functions may be provided, likely eventually calling ttm_bo_global_ref_init() and ttm_bo_global_ref_release(), respectively. Also, like the previous object, ttm_global_item_ref() is used to create an initial reference count for the TTM, which will call your initialization function.
 
+##PRIME
+- 是管理共享dma_buf的一种机制，最初是为了OPTIMUS multi-gpu平台使用，对于用户空间来说，PRIMEbuffers是基于文件描述符的.
+- 和GEM global name相似，PRIME文件描述符也可以用来在进程之间共享buffer，他提供了额外的安全机制：文件描述符要在进程间共享，必须明确通过UNIX socket。
+- 支持PRIME的驱动必须设置struct drm_driver中的DRIVER_PRIME bit，而且必须实现prime_handle_to_fd和prime_fd_to_handle。
+- gem_prime_export是将该drm_gem_object中的dma_buf导出，gem_prime_import是将dma_buf导入到drm_gem_object中。
 
 ## The Graphics Execution Manager (GEM)
 
@@ -217,6 +222,7 @@ struct drm_gem_object {
   struct dma_resv _resv;
   const struct drm_gem_object_funcs *funcs; //Optional GEM object functions. If this is set, it will be used instead of the corresponding drm_driver GEM callbacks. New drivers should use this.
 };
+/*drm_gem_object负责drm的内存管理，可以和PRIME框架结合*/
 ```
 - 
 ## DRM by ASR initialize
@@ -240,19 +246,22 @@ struct drm_gem_object {
     drm_dev_alloc(&asr_drm_driver, asr_drm_miscdev.this_device);
     ```c
     static struct drm_driver asr_drm_driver = {
-    .driver_features    = DRIVER_GEM | DRIVER_PRIME,
-    .gem_vm_ops     = &asr_drm_vm_ops,
-    .gem_free_object    = asr_gem_free_object,
-    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
-    .prime_fd_to_handle = drm_gem_prime_fd_to_handle,
-    .gem_prime_import   = drm_gem_prime_import,
-    .gem_prime_export   = drm_gem_prime_export,
-    .gem_prime_get_sg_table = asr_gem_prime_get_sg_table,
+    .driver_features    = DRIVER_GEM | DRIVER_PRIME, //设置了PRIME需要实现prime_handle_to_fd prime_fd_to_handle
+    .gem_vm_ops     = &asr_drm_vm_ops, //open gem object ref++, close gem object ref--, 一般用为了gem mmap做准备
+    .gem_free_object    = asr_gem_free_object, //free掉gem object
+    
+    /*GEM drivers must use the drm_gem_prime_handle_to_fd() and drm_gem_prime_fd_to_handle() helper functions. Those helpers rely on the driver gem_prime_export and gem_prime_import operations to create a dma-buf instance from a GEM object (dma-buf exporter role) and to create a GEM object from a dma-buf instance (dma-buf importer role).*/
+
+    .prime_handle_to_fd = drm_gem_prime_handle_to_fd, //从drm_device中导出dma_buf，可以给另外的dev用fb，prime export function for gem drivers
+    .prime_fd_to_handle = drm_gem_prime_fd_to_handle, //从fd找到dma_buf，然后将其导入到drm_device中，并建立handle，prime import function for gem drivers
+    .gem_prime_import   = drm_gem_prime_import, //向drm_device中导入dma_buf
+    .gem_prime_export   = drm_gem_prime_export, //从drm_device中导出dma_buf
+    .gem_prime_get_sg_table = asr_gem_prime_get_sg_table, //(copy)新建一个sg_table. provide a scatter/gather table of pinned pages
     .gem_prime_vmap     = asr_gem_prime_vmap,
     .gem_prime_vunmap   = asr_gem_prime_vunmap,
     .gem_prime_mmap     = asr_gem_prime_mmap,
     .open           = asr_drm_open,
-    .ioctls         = ioctls,
+    .ioctls         = ioctls, //新添加的ioctls
 #if defined(CONFIG_DEBUG_FS)
     .debugfs_init       = asr_drm_debugfs_init,
 #endif
