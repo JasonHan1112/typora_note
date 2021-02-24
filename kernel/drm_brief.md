@@ -131,7 +131,7 @@ struct drm_driver {
 
 - driver-specific init and release functions may be provided, likely eventually calling ttm_bo_global_ref_init() and ttm_bo_global_ref_release(), respectively. Also, like the previous object, ttm_global_item_ref() is used to create an initial reference count for the TTM, which will call your initialization function.
 
-##PRIME
+## PRIME
 - 是管理共享dma_buf的一种机制，最初是为了OPTIMUS multi-gpu平台使用，对于用户空间来说，PRIMEbuffers是基于文件描述符的.
 - 和GEM global name相似，PRIME文件描述符也可以用来在进程之间共享buffer，他提供了额外的安全机制：文件描述符要在进程间共享，必须明确通过UNIX socket。
 - 支持PRIME的驱动必须设置struct drm_driver中的DRIVER_PRIME bit，而且必须实现prime_handle_to_fd和prime_fd_to_handle。
@@ -188,6 +188,10 @@ struct drm_driver {
 ### Command Execution
 
 - Client programs construct command buffers containing references to previously allocated memory objects, and then submit them to GEM. At that point, GEM takes care to bind all the objects into the GTT, execute the buffer, and provide necessary synchronization between clients accessing the same buffers. This often involves evicting some objects from the GTT and re-binding others (a fairly expensive operation), and providing relocation support which hides fixed GTT offsets from clients. Clients must take care not to submit command buffers that reference more objects than can fit in the GTT; otherwise, GEM will reject them and no rendering will occur. Similarly, if several objects in the buffer require fence registers to be allocated for correct rendering (e.g. 2D blits on pre-965 chips), care must be taken not to require more fence registers than are available to the client. Such resource management should be abstracted from the client in libdrm.
+
+## GEM TTM PRIME
+
+GEM提供了一个用户空间的通用接口，TTM可以认为是GEM的底层，用来表示VRAM的底层，PRIME也是一个drm_gem_object之间共享DMA BUFFER的机制。
 
 ## GEM frame 数据结构 
 
