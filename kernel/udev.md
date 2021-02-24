@@ -19,3 +19,5 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action, char *e
 - 在/lib/udev/rules.d（system rules）、/run/udev/rules.d（volatile runtime directory, 第）、/etc/udev/rules.d（local administration directory, 最高优先级），  
 - 配置文件中“#”为注释符
 
+## udev cold boot
+当设备在udevd启动之前就已经插入时，需要使用udevadm trigger 命令来让udevd接收kernel event
