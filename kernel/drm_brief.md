@@ -294,8 +294,11 @@ struct drm_gem_object {
     drm_dev_register(drm, 0);
         |
         drm_minor_register(dev, DRM_MINOR_CONTROL);
+        |
         drm_minor_register(dev, DRM_MINOR_RENDER);
+        |
         drm_minor_register(dev, DRM_MINOR_PRIMARY);
+        |
         dev->driver->load
         如果有DRIVER_MODESET还要注册MODESET(ASR只是drm以及gem)
 
@@ -303,4 +306,216 @@ struct drm_gem_object {
 
 
 
+## KMS
+可以理解成KMS是FBDEV的替代，KMS中会虚拟出fbdev
+### SMI DRM Frame 初始化
+SMI用的是pcie下drm kms的框架来做的显示
+```c
+static struct drm_driver driver = {
+#ifdef PRIME
+    .driver_features = DRIVER_HAVE_IRQ | DRIVER_IRQ_SHARED |DRIVER_GEM |DRIVER_PRIME | DRIVER_MODESET,
+#else
+    .driver_features = DRIVER_HAVE_IRQ | DRIVER_IRQ_SHARED |DRIVER_GEM | DRIVER_MODESET,
+#endif
+    .load = smi_driver_load,
+    .unload = smi_driver_unload,
+#if (((LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)) && \
+    (LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)))&& !defined(RHEL_RELEASE_VERSION) )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_LOWER_THAN(7,5))
+    .set_busid = drm_pci_set_busid,
+#endif
+    .fops = &smi_driver_fops,
+    .name = DRIVER_NAME,
+    .desc = DRIVER_DESC,
+    .date = DRIVER_DATE,
+    .major = DRIVER_MAJOR,
+    .minor = DRIVER_MINOR,
+    .patchlevel = DRIVER_PATCHLEVEL,
+#if ((LINUX_VERSION_CODE <= KERNEL_VERSION(3,12,0))&& !defined(RHEL_RELEASE_VERSION)  )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_LOWER_THAN(7,3))
+    .gem_init_object = smi_gem_init_object,
+#endif
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0))&& !defined(RHEL_RELEASE_VERSION)  )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_LOWER_THAN(7,4))
+    .gem_free_object = smi_gem_free_object,
+#else
+    .gem_free_object_unlocked = smi_gem_free_object,
+#endif
+    .dumb_create = smi_dumb_create,
+    .dumb_map_offset = smi_dumb_mmap_offset,
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION(3,12,0))&& !defined(RHEL_RELEASE_VERSION)  )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_LOWER_THAN(7,4))
+    .dumb_destroy = smi_dumb_destroy,
+#else
+    .dumb_destroy = drm_gem_dumb_destroy,
+#endif
+#if (((LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)) && \
+    (LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0))&& !defined(RHEL_RELEASE_VERSION)) )|| \
+    (defined(RHEL_RELEASE_VERSION) && \
+    (RHEL_VERSION_HIGHER_THAN(7,4) && RHEL_VERSION_LOWER_THAN(7,5)))
+    .get_vblank_counter = drm_vblank_no_hw_counter,
+#endif
+    .enable_vblank      = smi_enable_vblank,
+    .disable_vblank     = smi_disable_vblank,
+    .irq_preinstall = smi_irq_preinstall,
+    .irq_postinstall = smi_irq_postinstall,
+    .irq_uninstall = smi_irq_uninstall,
+    .irq_handler        = smi_drm_interrupt,
+#ifdef PRIME
+#if ((LINUX_VERSION_CODE > KERNEL_VERSION(3,14,0)   )&& !defined(RHEL_RELEASE_VERSION) )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_HIGHER_THAN(7,3))
+    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
+    .prime_fd_to_handle = drm_gem_prime_fd_to_handle,
 
+    .gem_prime_import   = drm_gem_prime_import,
+    .gem_prime_export   = drm_gem_prime_export,
+
+    .gem_prime_get_sg_table = smi_gem_prime_get_sg_table,
+    .gem_prime_import_sg_table = smi_gem_prime_import_sg_table,
+    .gem_prime_vmap     = smi_gem_prime_vmap,
+    .gem_prime_vunmap   = smi_gem_prime_vunmap,
+    .gem_prime_pin      = smi_gem_prime_pin,
+    .gem_prime_unpin    = smi_gem_prime_unpin,
+#endif
+#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)  )&& !defined(RHEL_RELEASE_VERSION) )|| \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_HIGHER_THAN(7,3))
+    .gem_prime_res_obj = smi_gem_prime_res_obj,
+#endif
+#endif
+};
+
+
+
+struct ttm_bo_driver smi_bo_driver = {
+    .ttm_tt_create = smi_ttm_tt_create,
+    .ttm_tt_populate = smi_ttm_tt_populate,
+    .ttm_tt_unpopulate = smi_ttm_tt_unpopulate,
+    .init_mem_type = smi_bo_init_mem_type,
+    .evict_flags = smi_bo_evict_flags,
+#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0))  && !defined(RHEL_RELEASE_VERSION) ) || \
+    (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_HIGHER_THAN(7,4))
+    .eviction_valuable = ttm_bo_eviction_valuable,
+#endif
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0) )  && !defined(RHEL_RELEASE_VERSION) ) \
+    || (defined(RHEL_RELEASE_VERSION) && RHEL_VERSION_LOWER_THAN(7,4))
+    .move = smi_bo_move,
+#else
+    .move = NULL,
+#endif
+#if ( (LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) && \
+    LINUX_VERSION_CODE < KERNEL_VERSION(4,11,0)) && !defined(RHEL_RELEASE_VERSION) )  || \
+    (defined(RHEL_RELEASE_VERSION) && (RHEL_VERSION_HIGHER_THAN(7,4) && RHEL_VERSION_LOWER_THAN(7,5)))
+    .lru_tail = &ttm_bo_default_lru_tail,
+    .swap_lru_tail = &ttm_bo_default_swap_lru_tail,
+#endif
+    .verify_access = smi_bo_verify_access,
+    .io_mem_reserve = &smi_ttm_io_mem_reserve,
+    .io_mem_free = &smi_ttm_io_mem_free,
+#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0) && \
+    LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))  && !defined(RHEL_RELEASE_VERSION) ) || \
+    (defined(RHEL_RELEASE_VERSION) && (RHEL_VERSION_HIGHER_THAN(7,5) && RHEL_VERSION_LOWER_THAN(7,6)))
+    .io_mem_pfn = ttm_bo_default_io_mem_pfn,
+#endif
+};
+
+
+```
+smi_init
+  |
+  pci_register_driver
+    |
+    smi_pci_probe
+      |
+      drm_get_pci_dev
+        |
+        drm_dev_register
+          |
+          drm_driver->load
+
+
+
+
+drm_driver.smi_driver_load
+  |
+  pci_enable_device
+  |
+  smi_device_init//设置crtc的数量，设置pci dma mask，获取bar1空间(寄存器空间)，初始化vram
+    |
+    pci_set_dma_mask
+    |
+    pci_resource_start
+    |
+    pci_resource_len
+    |
+    smi_vram_init//获取bar0的空间
+  |
+  ddk768_initChip
+  |
+  ddk768_deInit
+  |
+  hw768_init_hdmi
+  |
+  smi_mm_init//创建ttm相关数据结构，用于内核管理vram
+    |
+    smi_ttm_global_init
+      |
+      drm_global_item_ref
+    |
+    ttm_bo_device_init//创建ttm_bo_device，注册ttm_bo_driver
+    |
+    ttm_bo_init_mm//调用ttm_bo_driver->init_mem_type初始化ttm_mem_type_manager
+  |
+  drm_vblank_init//initialize vblank support
+  |
+  drm_irq_install//注册irq
+  |
+  smi_modeset_init
+    |
+    drm_mode_config_init//initialize DRM mode_config structure
+    //根据实际情况填充mode_config
+    smi_crtc_init
+      |
+      smi_plane_init//初始化两次，DRM_PLANE_TYPE_PRIMARY，DRM_PLANE_TYPE_CURSOR，
+        |
+        drm_universal_plane_init //初始化universal plane object注册相关plane的formats以及functions
+        |
+        drm_plane_helper_add //向plane中添加drm_plane_help_funcs
+      drm_crtc_init_with_planes//初始化crtc并向其注册指定的plane
+      |
+      drm_crtc_helper_add//向crtc中添加helper_functions
+    |
+    smi_encoder_init//初始化encoder
+      |
+      drm_encoder_init//初始化encoder
+      |
+      drm_encoder_helper_add//添加helper函数
+    smi_connector_init//connector 初始化
+      |
+      drm_connector_init//注册connector函数，type并且初始化connector
+    |
+    drm_mode_connector_attach_encoder//connector和encoder进行attach
+    |
+    smi_fbdev_init//初始化虚拟framebuffer
+      |
+        drm_fb_helper_prepare//建立一个drm_fb_helper(emulate fbdev on top of KMS)
+      |
+      drm_fb_helper_init//初始化一个drm_fb_helper，向其中填充上connector info，crtc info结构体
+      |
+      drm_fb_helper_single_add_all_connectors//add all connectors to fbdev emulation helper
+      |
+      drm_helper_disable_unused_functions//disable all the possible outputs/crtcs before entering KMS mode
+      |
+      drm_fb_helper_initial_config//Scans the CRTCs and connectors and tries to put together an initial setup.
+        |
+        __drm_fb_helper_initial_config_and_unlock
+          |
+          drm_setup_crtcs//使能connector并且设置drm_fb_helper_crtc
+          |
+          drm_fb_helper_single_fb_probe//分配存储，创建fbdev info structure通过->fb_probe
+          |
+          drm_setup_crtcs_fb//设置fb_info和connector匹配
+          |
+          register_framebuffer //registers the fbdev and so allows userspace to call into the driver through the fbdev interfaces.
+  drm_kms_helper_poll_init
+    |
+    drm_kms_helper_poll_enable//re-enable output polling
