@@ -21,3 +21,6 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action, char *e
 
 ## udev cold boot
 当设备在udevd启动之前就已经插入时，需要使用udevadm trigger 命令来让udevd接收kernel event
+
+## udev monitor
+udevadm monitor --env 显示完整的事件环境：
