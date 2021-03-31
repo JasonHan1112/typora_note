@@ -527,3 +527,53 @@ vim --version | grep clipboard
 - 2020/7/18
   尽量用cp -a，该操作可以保持文件的属性一致
 
+- 2021/03/29
+  dm_crypt需要内核相关的支持。还需要添加内核算法相关的支持。
+  用户空间需要用到cryptsetup工具
+  ```c
+  cryptsetup luksFormat /dev/nvme0n1
+  创建一个lukfs的文件系统类型
+
+  cryptsetup luksOpen /dev/nvme0n1 nvme_crypt
+  会在/dev/mapper/路径下生成nvme_crypt文件，该文件就是相对应的设备节点
+
+  cryptsetup status /dev/mapper/nvme_crypt
+  查看该节点状态
+
+  mkdir /nvme_data
+
+  mkfs.ext4 /dev/mapper/nvme_crypt
+
+  mount /dev/mapper/nvme_crypt /nvme_data
+  ```
+
+- 2021/03/30
+  make ARCH=arm64 xxx_defconfig
+  针对xxx_defconfig生成相应的的.config
+  make ARCH=arm64 menuconfig
+  编辑当前的.config
+  make ARCH=arm savedefconfig
+  保存当前的.config的相关配置到defconfig（精简后的配置）
+  cp defconfig arch/arm64/configs/
+  保存修改后的xxx_defconfig
+
+- 2021/03/31
+  通过硬件加密磁盘，用到了sedutil工具opal 2.0协议
+  - query：
+  sedutil-cli --query /dev/nvme0
+  - set up the drive
+  sedutil-cli --initialsetup 1/dev/nvme0
+
+  - enable locking
+  sedutil-cli --enableLockingRange 0 1 /dev/nvme0
+  sedutil-cli --setlockingrange 0 lk 1 /dev/nvme0
+  sedutil-cli --setMBREnable on 1 /dev/nvme0
+  - lock the drive
+  sedutil-cli --setlockingrange 0 lk 1 /dev/nvme0
+  sedutil-cli --setMBREnable on 1 /dev/nvme0
+  - access the drive
+  sedutil-cli --setlockingrange 0 rw 1 /dev/nvme0
+  sedutil-cli --setMBRdone on 1 /dev/nvme0
+  - disable locking
+  sedutil-cli --disableLockingRange 0 1 /dev/nvme0
+  sedutil-cli --setMBREnable off 1 /dev/nvme0
