@@ -577,3 +577,10 @@ vim --version | grep clipboard
   - disable locking
   sedutil-cli --disableLockingRange 0 1 /dev/nvme0
   sedutil-cli --setMBREnable off 1 /dev/nvme0
+
+- 2021/04/13
+  默认在ssh的虚拟终端或者串口的终端上是无法查看显示器的参数的（xrandr）需要配置DISPLAY环境变量，配置好环境变量后就可以查看。
+  ```c
+  echo DISPLAY=0:0
+  ```
+
