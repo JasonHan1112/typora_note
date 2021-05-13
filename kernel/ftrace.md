@@ -40,7 +40,8 @@ ftrace帮助开发人员了解linux内核的运行时行为，以便进行故障
 
 ## ftrace的使用
 
-ftrace在内核态工作，用户通过debugfs接口来控制和使用ftrace。ftrace支持两大类tracer：传统tracer和non-tracer tracer
+- ftrace在内核态工作，用户通过debugfs接口来控制和使用ftrace。ftrace支持两大类tracer：传统tracer和non-tracer tracer
+- 在内核中需要加入kernel_hacking---->trace的编译选项，否则在available_tracer中无法出现相关的支持的选项。
 
 ### 传统tracer使用
 
