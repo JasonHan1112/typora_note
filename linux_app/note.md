@@ -139,10 +139,102 @@ sudo apt-get install tmux
 
 将远程目录挂载到本地
 
+## gtags使用
+- 参考链接
+  https://www.gnu.org/software/global/
+### 简单介绍
+#### 下载
+地址：https://ftp.gnu.org/pub/gnu/global/
+- 解压
+- 编译、安装
 
+```
+% ./configure
+% make
+```
+#### 准备工作
+- 生成gtags
+```
+$ cd ${project_path}
+$ gtags
+$ ls G*
+- GTAGS: definition database
+- GRTAGS: reference database
+- GPATH: path name database
+```
+#### 基本使用
+- 查找函数
+```
+$ global func1
+DIR1/fileB.c            # func1() is defined in fileB.c
+$ cd DIR1
+$ global func1
+fileB.c                 # relative path from DIR1
+$ cd ../DIR2
+$ global func1
+../DIR1/fileB.c         # relative path from DIR2
+```
+- 查找引用
+```
+$ global -r func2
+../DIR1/fileA.c         # func2() is referred from fileA.c
+```
+- POSIX 正则表达式
+```
+$ cd /home/user/ROOT
+$ global 'func[1-3]'
+DIR1/fileB.c            # func1, func2 and func3 are matched
+DIR2/fileC.c
+```
+- 查找后显示详情
+```
+$ global func2
+DIR2/fileC.c
+$ global -x func2
+func2              2 DIR2/fileC.c       func2(){ i++; }
+func2              4 DIR2/fileC.c       func2(){ i--; }
+```
+- 查找没有在GTAGS中的符号
+```
+$ global -xs X
+X                  1 DIR2/fileC.c #ifdef X
+```
+#### vim使用global
+- 准备
+```
+$ cp /usr/local/share/gtags/gtags.vim $HOME/.vim/plugin
+```
+- 使用
+```
+:Gtags main
+:cn
+go to the next entry.
 
+:cp
+go to the previous entry.
 
+:ccN
+go to the N’th entry.
 
+:cl
+list all entries.
+
+To go to the referenced point of func1, add the -r option.
+    :Gtags -r func1
+To locate symbols which are not defined in GTAGS, try this:
+    :Gtags -s lbolt
+To locate strings, try this:
+    :Gtags -g int argc
+
+    :Gtags -g "root"
+
+    :Gtags -ge -C               <- locate ’-C’
+To get a list of tags in specified files, use the -f command.
+    :Gtags -f main.c            <- locate tags in main.c
+If you are editing main.c itself, you can use ‘%’ instead.
+
+    :Gtags -f %                 <- locate tags in main.c
+```
 
 
 
