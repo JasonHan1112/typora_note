@@ -114,7 +114,29 @@ Direct Rending Mangement，DRM是Linux目前主流的图形显示框架，
 
 #### 3.1.2 GEM
 
+主要用来对framebuffer底层的内存进行管理（分配、回收、共享等）。
+
 #### 3.1.1 KMS
+
+- Framebuffer
+
+  用来存放显示内容的buffer。
+
+- CRTC
+
+  对显示buffer进行扫描，并产生时序信号的硬件模块，通常指Display Controller。
+
+- Encoder
+
+  负责将CRTC输出的timing时序转换成外部设备所需要的信号的模块，如HDMI转换器或DSI Controller。
+
+- Connector
+
+  连接物理显示设备的连接器，如HDMI、DisplayPort、DSI总线，通常和Encoder驱动绑定在一起。
+
+  ![](./drm_kms.png)
+
+
 
 
 
