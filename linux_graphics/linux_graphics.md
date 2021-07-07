@@ -8,15 +8,15 @@
 
 图 1：
 
-1. 不带桌面环境的Linux版本。
-2. 一般用于资源敏感的场景。
-3. 一般用于功能较单一的嵌入式产品中。
-
-图 2：
-
 1. 主流的带桌面环境的Linux发行版。
 2. 一般用于对图形要求较高场景，功能较全。
 3. 一般用于具有较复杂图形交互的场景的PC机中。
+
+图 2：
+
+1. 不带桌面环境的Linux版本。
+2. 一般用于资源敏感的场景。
+3. 一般用于功能较单一的嵌入式产品中。
 
 
 ## 二、用户空间
@@ -98,11 +98,248 @@
   
 - Wayland
 
-  Wayland是一个X的替代，功能与X一样也是提供了一个协议来处理各个App的显示。但是协议和实现方式与Xorg有所不同。他的架构更加的简单，效率更高，对3D的渲染更加友好，但是现在的兼容性还没X那么好。部分硬件场上还没有相应的官方驱动。
+  [Wayland]: https://wayland.freedesktop.org/
+  
+  是一个X的替代，功能与X一样也是提供了一个协议来处理各个App的显示。但是协议和实现方式与Xorg有所不同。他的架构更加的简单，效率更高，对3D的渲染更加友好，但是现在的兼容性还没X那么好。部分硬件场上还没有相应的官方驱动。
   
   ![](./wayland.jpg)
 
-### 2.5 Libdrm
+### 2.5 Rendering（Computer Graphics）
+
+渲染，主要是计算机从2D或者3D模型通过计算机程序生成图片的过程。模型可以用语言或者数据结构被定义在一个文件中，这个文件主要包括: geometry, viewport, texture, lighting, shading。
+
+很早之前渲染的工作主要交给CPU做，由于2D、3D模型的数据量较大，一般非常占用CPU，后续GPU的诞生更好了适应了对大数据量2D、3D模型的运算。
+
+#### 2.5.1 Rendering Pipline
+简单概括为
+Buffers------>Vertex Shader------>Primitive Assambly------>Rasterization------>Fragment Shader------>Framebuffer
+详细介绍帮助理解如下：
+https://zhuanlan.zhihu.com/p/61949898
+
+https://zhuanlan.zhihu.com/p/137780634
+
+#### 2.5.2 实现计算机渲染（Rendering Pipline）
+为了实现计算机的渲染，GPU作为图形渲染的硬件，并有以下通用的图形库（API），OpenGL、OpenGLES、 Vulkan、DirectX、Metal。GPU支持其中一种或者几种后可以实现用硬件进行图形渲染的加速。
+
+- [OpenGL](https://www.khronos.org/opengl/)
+	
+	由khronos.org维护，是用于渲染2D、3D矢量图形的跨语言、跨平台的应用程序编程接口（API）。这个接口由近350个不同的函数调用组成，用来绘制从简单的图形比特到复杂的三维景象。
+	以下包可以用来创建并管理 OpenGL 窗口，也可以管理输入，但几乎没有除此以外的其它功能：
+	
+	- GLFW：跨平台窗口和键盘、鼠标、手柄处理，偏向游戏。
+	- freeglut：跨平台窗口和键盘、鼠标处理，API 是 GLUT API 的超集。
+	- QT：跨平台C++窗口组件库，提供了许多 OpenGL 辅助对象，抽象掉了桌面版 OpenGL与 OpenGL ES 之间的区别。
+	
+- [OpenGL ES](https://www.khronos.org/opengles/)
+
+	由khronos.org维护，OpenGL ES (OpenGL for Embedded Systems) 是 OpenGL 三维图形 API 的子集，针对手机、PDA和游戏主机等嵌入式设备而设计。OpenGL ES 是从 OpenGL 裁剪的定制而来的，去除了glBegin/glEnd，四边形（GL_QUADS）、多边形（GL_POLYGONS）等复杂图元等许多非绝对必要的特性。
+
+- [WebGL](https://get.webgl.org/)
+
+	由khronos.org维护，全写（Web Graphics Library）是一种3D绘图协议，这种技术标准允许把JavaScript和OpenGL ES 2.0结合在一起，通过增加OpenGL ES 2.0的一个JavaScript绑定，WebGL可以为HTML5 Carvas提供硬件3D加速渲染。这样Web开发人员就可以借助系统显卡在浏览器里流畅的显示3D场景和模型了。还能创建复杂的导航和数据视觉化。
+
+- [Vulkan](https://www.vulkan.org)
+
+	由khronos.org维护，同 OpenGL® 一样，Vulkan™ 也由 Khronos 集团开发。它是 AMD Mantle 的后续版本，继承了前者强大的低开销架构，使软件开发人员能够全面获取 Radeon™ GPU 与多核 CPU 的性能、效率和功能。相对于 OpenGL，Vulkan™ 大幅降低了 CPU 在提供重要特性、性能和影像质量时的“API 开销”（CPU 在分析游戏的硬件需求时所执行的后台工作），而且可以使用通常通过 OpenGL 无法访问的 GPU 硬件特性。
+
+
+- DirectX
+
+	DirectX（Direct eXtension，简称DX）是由微软公司创建的多媒体编程接口，是一种应用程序接口（API）。DirectX可以让以windows为平台的游戏或多媒体程序获得更高的执行效率，加强3D图形和声音效果，并提供设计人员一个共同的硬件驱动标准，让游戏开发者不必为每一品牌的硬件来写不同的驱动程序，也降低用户安装及设置硬件的复杂度。DirectX已被广泛使用于Microsoft Windows、Microsoft XBOX、Microsoft XBOX 360和Microsoft XBOX ONE电子游戏开发。
+	
+- [Metal](https://developer.apple.com/metal/)
+
+	Apple为游戏开发者推出了新的平台技术 Metal，该技术能够为 3D 图像提高 10 倍的渲染性能，并支持大家熟悉的游戏引擎及公司。Metal 是一种低层次的渲染应用程序编程接口，提供了软件所需的最低层，保证软件可以运行在不同的图形芯片上。Metal 提升了 A7 与 A8 处理器效能，让其性能完全发挥。
+
+**总结：**
+
+- OpenGL ES是OpenGL的子集。
+- OpenGL、OpenGL ES、WebGL、Vulkan都是由khronos.org维护的开源跨平台通用图形库。
+- khronos.org会主推Vulkan，但是现在Vulkan的使用者还不多，更负责，Vulkan更能发挥出多核的能力。
+- DirectX由微软开发，闭源主要用在Windows上。
+- Metal由苹果开发，闭源主要用在苹果设备上。
+
+#### 2.5.3 OpenGL在Linux中使用简介
+
+OpenGL是一个通用的开源图形库（API），如果硬件支持OpenGL那么在该平台下可以使用硬件加速OpenGL的处理。OpenGL通过GLSL语言进行编程从而控制Shader的处理流程。一般需要向OpenGL提供Vertex Shader和Fragment Shader，以下为一个例子：
+
+Vertex Shader:
+
+```c
+#version 330
+//指定在location=0的地方放入vec3类型的位置信息变量aPos（由外界提供）
+layout (location = 0) in vec3 aPos;
+//指定在location=0的地方放入vec3的颜色信息变量aColor
+layout (location = 1) in vec3 aColor;
+out vec3 ourColor;//向外部输出vec3类型的ourColor
+void main()
+{
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);//向gl_Position变量赋值
+    ourColor = aColor;//向ourColor变量赋值（aColor的值由外界提供）
+}
+
+```
+
+
+
+Fragment Shader:
+
+```c
+#version 330
+out mediump vec4 FragColor;//指定一个输出的变量
+in mediump vec3 ourColor;//由Vertex Shader中提供
+void main()
+{
+    FragColor = vec4(ourColor, 0);//给FragColor赋值
+}
+
+```
+
+以上两段GLSL通过编译链接（OpenGL完成）后，可以完成的工作是从cpu端拿到三个顶点的位置信息以及三个顶点的颜色信息，然后进行渲染输出一个指定色彩的三角形。
+
+由于OpenGL只能完成对图形的渲染但是无法进行窗口显示，鼠标键盘等输入设备的事件的反馈，因此要想在计算机上渲染输出可见的图形需要借助其他库，下边我以[GLFW](https://www.glfw.org/)配合OpenGL为例做介绍。
+
+[GLFW](https://www.glfw.org/)是一个开源跨平台的支持OpenGL的窗口框架，可以用此来实现OpenGL图形渲染以及鼠标键盘等事件的反馈。在Linux中GLFW对窗口的操作是直接调用底层的Xlib或者Wayland相关的lib实现的。
+
+```c
+include <iostream>
+#include <glad/gl.h>
+#include <cmath>
+
+#include <GLFW/glfw3.h>
+const char *vertexShaderSource = "#version 300 es\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec3 aColor;\n" // the color variable has attribute position 1
+    "out vec3 ourColor;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   ourColor = aColor;\n"
+    "}\n";
+
+const char *fragmentShaderSource = "#version 300 es\n"
+    "out mediump vec4 FragColor;\n"
+    "in mediump vec3 ourColor;\n"
+    "//uniform mediump float alphaValue;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(ourColor, 0);\n"
+    "}\n";
+        
+float vertices[] = {
+    //position              //color
+    -0.8f, -0.8f, 0.0f,     1.0f, 0.0f, 0.0f,
+    0.8f, -0.8f, 0.0f,      0.0f, 1.0f, 0.0f,
+    0.0f, 0.8f,0.0f,        0.0f, 0.0f, 1.0f
+};
+
+int main(void)
+{
+    GLFWwindow* window;
+        
+
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
+
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(640, 480, "hello world", NULL, NULL);
+    if (!window) 
+    {   
+        glfwTerminate();
+        return -1;
+	    }
+
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
+    glViewport(0, 0, 90, 60);
+
+    /*create VBO*/
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    //copy our vertices array in a buffer for OpenGL to use
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    //then set our vertex attributes pointers
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    /*creat vertex shader and compile it*/
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    /*check compile status*/
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+    if(!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+
+
+    /*create shader program*/
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    /*check link status*/
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::LINK::SHADERPROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        glClearColor( 0.4f, 0.3f, 0.4f, 0.0f );
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        /*set uniform*/
+        #if 0
+        {
+            float timeValue = glfwGetTime();
+            float alphaValue = (sin(timeValue) / 2.0f) + 0.5f;
+            int alphaValueLocation = glGetUniformLocation(shaderProgram, "alphaValue");
+            glUniform1f(alphaValueLocation, alphaValue);
+        }
+        #endif
+        glUseProgram(shaderProgram);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
+}
+```
+
+QT中使用OpenGL也是类似的流程,只是提供了多个组件支持OpenGL,每个组件都有不同的实现方式.主要思路是将OpenGL context创建以及绘制绑定到不同的事件上.后边的总结会由流程图进行描述.
+
+### 2.6 Libdrm
 
 和显卡驱动强相关，主要是封装了驱动的IOCTL操作。
 
@@ -143,5 +380,5 @@ Direct Rending Mangement，DRM是Linux目前主流的图形显示框架，
 ## 四、总结
 总结如上部分，得出以下框架：
 
-![](./Linux OpenGL.jpg)
+<img src="./Linux OpenGL.png" style="zoom:200%;" />
 
